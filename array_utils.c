@@ -32,6 +32,15 @@ float* init_array(int size, float value){
     return array;
 }
 
+float dot_product(float a[], float b[], int size){
+    float res = 0;
+    for (int i = 0; i < size; i++)
+    {
+        res += a[i] * b[i];
+    }
+    return res;
+}
+
 
 
 error_code init_ndarray(ndarray *t, int dimension, int shape[], float value){

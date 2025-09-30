@@ -18,6 +18,7 @@ typedef struct ndarray
 void print_float_array(int size, float array[]);
 float get_random_float(float min, float max);
 float* get_random_array(int size, float min_value, float max_value);
+float* init_array(int size, float value);
 
 error_code init_ndarray(ndarray *t, int dimension, int shape[], float value);
 void set_data_ndarray(ndarray *t, float values[]);

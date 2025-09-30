@@ -23,6 +23,15 @@ float* get_random_array(int size, float min_value, float max_value){
     return array;
 }
 
+float* init_array(int size, float value){
+    float *array = (float*)malloc(size * sizeof(float));
+    for (int i = 0; i < size; i++)
+    {
+        array[i] = value;
+    }    
+    return array;
+}
+
 
 
 error_code init_ndarray(ndarray *t, int dimension, int shape[], float value){

@@ -6,9 +6,18 @@
 int main(){
     srand((unsigned int)time(NULL));
 
-    float inputs[4] = {1.0, 2.0, 3.0, 2.5};
     int n_inputs = 4;
+    int n_batch = 3;
     int n_neurons = 3;
+
+    ndarray inputs;
+    int inputs_shape[2] = {n_batch, n_inputs};
+    init_ndarray(&inputs, 2, inputs_shape, 0.0);
+    float inputs_values[12] = {1.0, 2.0, 3.0, 2.5, 
+                               2.0, 5.0, -1.0, 2.0, 
+                               -1.5, 2.7, 3.3, -0.8};
+    set_data_ndarray(&inputs, inputs_values);
+
     ndarray weights;
     int weights_shape[2] = {n_neurons, n_inputs};
     init_ndarray(&weights, 2, weights_shape, 0.0);
@@ -18,16 +27,16 @@ int main(){
     set_data_ndarray(&weights, weights_values);
     float biases[3] = {2.0, 3.0, 0.5};
 
-    float* layer_outputs = init_array(n_neurons, 0.0);
+    ndarray weights_T = transpose_copy_ndarray(weights);
+    ndarray outputs = matrix_product(inputs, weights_T);//X * W
+    add_vec_to_matrix(&outputs, biases);//+ biases
 
-    for (int n = 0; n < n_neurons; n++)
-    {
-        layer_outputs[n] = dot_product(inputs, &weights.data[n*n_inputs], n_inputs) + biases[n];
-    }
-
-    print_float_array(n_neurons, layer_outputs);
+    print_ndarray(outputs);
 
     destroy_ndarray(&weights);
-    free(layer_outputs);
+    destroy_ndarray(&weights_T);
+    destroy_ndarray(&inputs);
+    destroy_ndarray(&outputs);
+
     return 0;
 }

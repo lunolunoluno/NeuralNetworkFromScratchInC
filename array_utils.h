@@ -21,8 +21,12 @@ float* get_random_array(int size, float min_value, float max_value);
 float* init_array(int size, float value);
 float dot_product(float a[], float b[], int size);
 
-error_code init_ndarray(ndarray *t, int dimension, int shape[], float value);
-void set_data_ndarray(ndarray *t, float values[]);
-void destroy_ndarray(ndarray *t);
-void print_ndarray(const ndarray t);
+error_code init_ndarray(ndarray *arr, int dimension, int shape[], float value);
+void set_data_ndarray(ndarray *arr, float values[]);
+ndarray copy_ndarray(ndarray arr);
+ndarray transpose_copy_ndarray(ndarray arr);
+ndarray matrix_product(ndarray arr1, ndarray arr2);
+void add_vec_to_matrix(ndarray *arr, float vec[]);
+void destroy_ndarray(ndarray *arr);
+void print_ndarray(const ndarray arr);
 #endif

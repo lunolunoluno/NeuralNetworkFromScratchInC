@@ -181,7 +181,7 @@ void print_ndarray_recursive(ndarray arr, int dim, int* indices, int offset) {
         printf("[");
         for (int i = 0; i < arr.shape[dim]; i++) {
             int index = offset + i;
-            printf("%.2f", arr.data[index]);
+            printf("%f", arr.data[index]);
             if (i < arr.shape[dim] - 1) {
                 printf(", ");
             }

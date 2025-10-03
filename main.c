@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "array_utils.h"
+#include "layer.h"
 
 int main(){
     srand((unsigned int)time(NULL));
@@ -28,7 +29,12 @@ int main(){
                                 0.5, -0.91, 0.26, -0.5,
                                 -0.26, -0.27, 0.17, 0.87};
     set_data_ndarray(&weights1, weights1_values);
-    float biases1[3] = {2.0, 3.0, 0.5};
+
+    ndarray bias1;
+    int bias1_shape[1] = {n_neurons_l1};
+    init_ndarray(&bias1, 1, bias1_shape, 0.0);
+    float bias1_values[3] = {2.0, 3.0, 0.5};
+    set_data_ndarray(&bias1, bias1_values);
 
     // initialize weights + biases for layer 2
     ndarray weights2;
@@ -38,33 +44,40 @@ int main(){
                                 -0.5, 0.12, -0.33,
                                 -0.44, 0.73, -0.13};
     set_data_ndarray(&weights2, weights2_values);
-    float biases2[3] = {-1.0, 2.0, -0.5};
+
+    ndarray bias2;
+    int bias2_shape[1] = {n_neurons_l2};
+    init_ndarray(&bias2, 1, bias2_shape, 0.0);
+    float bias2_values[3] = {-1.0, 2.0, -0.5};
+    set_data_ndarray(&bias2, bias2_values);
+    
 
     // calculate output for layer 1
-    ndarray weights1_T = transpose_copy_ndarray(weights1);
-    ndarray layer1_outputs = matrix_product(inputs, weights1_T);//X * W
-    add_vec_to_matrix(&layer1_outputs, biases1);//+ biases
+    layer_dense layer1;
+    layer_init(&layer1, n_neurons_l1, n_inputs);    
+    set_layer_weights(&layer1, weights1);
+    set_layer_bias(&layer1, bias1);
+    
+    layer_forward(&layer1, inputs);
 
     printf("Layer 1 output:\n");
-    print_ndarray(layer1_outputs);
+    print_ndarray(layer1.outputs);
 
-    // calculate output for layer 2
-    ndarray weights2_T = transpose_copy_ndarray(weights2);
-    ndarray layer2_outputs = matrix_product(layer1_outputs, weights2_T);//X * W
-    add_vec_to_matrix(&layer2_outputs, biases2);//+ biases
+    // // calculate output for layer 2
+    layer_dense layer2;
+    layer_init(&layer2, n_neurons_l2, n_neurons_l1);    
+    set_layer_weights(&layer2, weights2);
+    set_layer_bias(&layer2, bias2);
+    
+    layer_forward(&layer2, copy_ndarray(layer1.outputs)); // important to make a copy of layer1.outputs to avoid double-free
 
     printf("Layer 2 output:\n");
-    print_ndarray(layer2_outputs);
+    print_ndarray(layer2.outputs);
 
 
     // destroy allocated variables
-    destroy_ndarray(&weights1);
-    destroy_ndarray(&weights1_T);
-    destroy_ndarray(&weights2);
-    destroy_ndarray(&weights2_T);
-    destroy_ndarray(&inputs);
-    destroy_ndarray(&layer1_outputs);
-    destroy_ndarray(&layer2_outputs);
+    destroy_layer(&layer1);
+    destroy_layer(&layer2);
 
     return 0;
 }

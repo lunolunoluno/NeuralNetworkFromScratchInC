@@ -27,6 +27,7 @@ ndarray copy_ndarray(ndarray arr);
 ndarray transpose_copy_ndarray(ndarray arr);
 ndarray matrix_product(ndarray arr1, ndarray arr2);
 void add_vec_to_matrix(ndarray *arr, float vec[]);
+void extract_subarray(ndarray *sub, const ndarray *arr, int index);
 void destroy_ndarray(ndarray *arr);
 void print_ndarray(const ndarray arr);
 #endif

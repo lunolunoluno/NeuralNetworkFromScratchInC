@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
+#include <string.h>
 #include "array_utils.h"
 
 void print_float_array(int size, float array[]){
@@ -170,6 +172,42 @@ void add_vec_to_matrix(ndarray *arr, float vec[]){
     }
 }
 
+void extract_subarray(ndarray *sub, const ndarray *arr, int index) {
+    assert(arr != NULL);
+    assert(sub != NULL);
+    assert(arr->dimension > 1);
+    assert(index >= 0 && index < arr->shape[0]);
+
+    // Compute size of one subarray (product of remaining dimensions)
+    int sub_size = 1;
+    for (int i = 1; i < arr->dimension; i++) {
+        sub_size *= arr->shape[i];
+    }
+
+    // Compute offset of the selected slice
+    int offset = index * sub_size;
+
+    // Build shape for the subarray
+    int *sub_shape = malloc((arr->dimension - 1) * sizeof(int));
+    assert(sub_shape != NULL);
+    memcpy(sub_shape, arr->shape + 1, (arr->dimension - 1) * sizeof(int));
+
+    // Initialize subarray (you already have this helper)
+    init_ndarray(sub, arr->dimension - 1, sub_shape, 0.0f);
+
+    // Copy the slice data into a temporary array
+    float *sub_data = malloc(sub_size * sizeof(float));
+    assert(sub_data != NULL);
+    memcpy(sub_data, arr->data + offset, sub_size * sizeof(float));
+
+    // Set the data using your provided function
+    set_data_ndarray(sub, sub_data);
+
+    // Cleanup
+    free(sub_shape);
+    free(sub_data);
+}
+
 void destroy_ndarray(ndarray *arr){
     free(arr->shape);
     free(arr->data);
@@ -178,6 +216,10 @@ void destroy_ndarray(ndarray *arr){
 
 void print_ndarray_recursive(ndarray arr, int dim, int* indices, int offset) {
     if (dim == arr.dimension - 1) {
+        for (int d = 0; d < dim; d++)
+        {
+            printf(" ");   
+        }        
         printf("[");
         for (int i = 0; i < arr.shape[dim]; i++) {
             int index = offset + i;
@@ -188,7 +230,11 @@ void print_ndarray_recursive(ndarray arr, int dim, int* indices, int offset) {
         }
         printf("]");
     } else {
-        printf("[");
+        for (int d = 0; d < dim; d++)
+        {
+            printf(" ");   
+        }  
+        printf("[\n");
         int stride = 1;
         for (int i = dim + 1; i < arr.dimension; i++) {
             stride *= arr.shape[i];
@@ -196,10 +242,10 @@ void print_ndarray_recursive(ndarray arr, int dim, int* indices, int offset) {
         for (int i = 0; i < arr.shape[dim]; i++) {
             print_ndarray_recursive(arr, dim + 1, indices, offset + i * stride);
             if (i < arr.shape[dim] - 1) {
-                printf(", ");
+                printf(",\n");
             }
         }
-        printf("]");
+        printf("]\n");
     }
 }
 

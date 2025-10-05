@@ -3,12 +3,12 @@
 #include "layer.h"
 
 void layer_init(layer_dense *layer, int n_neurons, int n_inputs){
-    // init the weights with random values between -1 and 1
+    // init the weights with random values between -0.01 and 0.01
     srand((unsigned int)time(NULL));
     ndarray weights;
     int weights_shape[2] = {n_neurons, n_inputs};
     init_ndarray(&weights, 2, weights_shape, 0.0);
-    float *weights_values = get_random_array(n_neurons*n_inputs, -1, 1);
+    float *weights_values = get_random_array(n_neurons*n_inputs, -0.01, 0.01);
     set_data_ndarray(&weights, weights_values);
     layer->weights = weights;
     free(weights_values);

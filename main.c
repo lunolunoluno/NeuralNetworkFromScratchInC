@@ -7,9 +7,9 @@
 
 int main(){
 
-    int batch_size = 3;
+    int batch_size = 2;
     dataset dataset;
-    char csv_path[] = "./100_samples_3_cat.csv";
+    char csv_path[] = "./test.csv";
     init_dataset_from_csv(&dataset, csv_path, batch_size);
 
     int n_inputs = dataset.train.shape[2];
@@ -46,6 +46,8 @@ int main(){
         printf("Layer 2 output:\n");
         print_ndarray(layer2.outputs);
     }
+
+    print_ndarray(dataset.train_labels);
 
     // destroy allocated variables
     destroy_layer(&layer1);

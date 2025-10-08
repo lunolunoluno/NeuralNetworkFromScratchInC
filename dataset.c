@@ -56,22 +56,33 @@ void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size){
             }
             assert(num_columns > 1); // need at least 1 input and 1 label for the code to work
             dataset->nb_inputs = num_columns-1;
-
+            
+            int n_batch = (dataset->nb_data + batch_size - 1) / batch_size;
             // init the train dataset with default values
             int dataset_shape[3] = {
-                (dataset->nb_data + batch_size - 1) / batch_size, // number of batches
+                n_batch, // number of batches
                 batch_size, // size of one batch
                 dataset->nb_inputs // all the inputs 
             };
             init_ndarray(&dataset->train, 3, dataset_shape, 0.0);
             dataset_values = (float*)malloc(dataset->train.total_size * sizeof(float));
+            for (int i = 0; i < dataset->train.total_size; i++)
+            {
+                dataset_values[i] = 0;
+            }
+            
 
             int train_label_shape[2] = {
-                (dataset->nb_data + batch_size - 1) / batch_size, // number of batches
+                n_batch, // number of batches
                 batch_size
             };
             init_ndarray(&dataset->train_labels, 2, train_label_shape, 0.0);
             label_values = (float*)malloc(dataset->train_labels.total_size * sizeof(float));
+            for (int i = 0; i < dataset->train_labels.total_size; i++)
+            {
+                label_values[i] = 0;
+            }
+            
         }else{
             // read each column and add the value to the train dataset
             char *token = strtok(line, ",");

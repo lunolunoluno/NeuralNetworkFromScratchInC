@@ -3,21 +3,24 @@
 #include "layer.h"
 
 void layer_init(layer_dense *layer, int n_neurons, int n_inputs){
-    // init the weights with random values between -0.01 and 0.01
+    // init the weights with random values between -0.1 and 0.1
     srand((unsigned int)time(NULL));
     ndarray weights;
     int weights_shape[2] = {n_neurons, n_inputs};
     init_ndarray(&weights, 2, weights_shape, 0.0);
-    float *weights_values = get_random_array(n_neurons*n_inputs, -0.01, 0.01);
+    float *weights_values = get_random_array(n_neurons*n_inputs, -0.1, 0.1);
     set_data_ndarray(&weights, weights_values);
     layer->weights = weights;
     free(weights_values);
 
-    // init the bias with just zeros (for now)
+    // init the bias with with random values between -0.1 and 0.1
     ndarray bias;
     int bias_shape[1] = {n_neurons};
     init_ndarray(&bias, 1, bias_shape, 0.0);
+    float *bias_values = get_random_array(n_neurons, -0.1, 0.1);
+    set_data_ndarray(&bias, bias_values);
     layer->bias = bias;
+    free(bias_values);
 
     // init inputs and outputs with default values
     ndarray inputs;

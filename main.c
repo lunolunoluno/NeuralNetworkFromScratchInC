@@ -4,6 +4,7 @@
 #include "array_utils.h"
 #include "layer.h"
 #include "dataset.h"
+#include "function.h"
 
 int main(){
 
@@ -40,11 +41,22 @@ int main(){
         printf("Layer 1 output:\n");
         print_ndarray(layer1.outputs);
 
+        ndarray layer1_outputs_relu = relu_forward_ndarray(layer1.outputs);
+        printf("Layer 1 ReLU:\n");
+        print_ndarray(layer1_outputs_relu);
+
         // calculate output for layer 2   
-        layer_forward(&layer2, copy_ndarray(layer1.outputs)); // important to make a copy of layer1.outputs to avoid double-free
+        layer_forward(&layer2, copy_ndarray(layer1_outputs_relu)); // important to make a copy to avoid double-free
 
         printf("Layer 2 output:\n");
         print_ndarray(layer2.outputs);
+
+        ndarray layer2_outputs_relu = relu_forward_ndarray(layer2.outputs);
+        printf("Layer 2 ReLU:\n");
+        print_ndarray(layer2_outputs_relu);
+
+        destroy_ndarray(&layer1_outputs_relu);
+        destroy_ndarray(&layer2_outputs_relu);
     }
 
     print_ndarray(dataset.train_labels);

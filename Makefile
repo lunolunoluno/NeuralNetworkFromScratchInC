@@ -1,4 +1,4 @@
-CFLAGS:=-g -Wall -Wextra -fsanitize=address -fsanitize=leak
+CFLAGS:=-g -Wall -Wextra -fsanitize=address -fsanitize=leak -lm
 
 main: main.c array_utils.o layer.o dataset.o function.o
 	gcc $^ -o main.o $(CFLAGS)

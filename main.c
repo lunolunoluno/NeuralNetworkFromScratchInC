@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "array_utils.h"
 #include "layer.h"
 #include "dataset.h"
@@ -51,12 +52,28 @@ int main(){
         printf("Layer 2 output:\n");
         print_ndarray(layer2.outputs);
 
-        ndarray layer2_outputs_relu = relu_forward_ndarray(layer2.outputs);
-        printf("Layer 2 ReLU:\n");
-        print_ndarray(layer2_outputs_relu);
+        ndarray layer2_outputs_softmax = copy_ndarray(layer2.outputs);
+        float *softmax_values = (float *)calloc(layer2.outputs.total_size, sizeof(float));
+        for (int j = 0; j < layer2.outputs.shape[0]; j++)
+        {
+            ndarray batch_row;
+            extract_subarray(&batch_row, &layer2.outputs, j);
+            ndarray batch_row_softmax = softmax_forward_vector(batch_row);
+            
+            memcpy(&softmax_values[j * batch_row_softmax.total_size], batch_row_softmax.data, batch_row_softmax.total_size * sizeof(float));
+            
+            destroy_ndarray(&batch_row);
+            destroy_ndarray(&batch_row_softmax);
+        }
+
+        set_data_ndarray(&layer2_outputs_softmax, softmax_values);
+        free(softmax_values);
+        
+        printf("Layer 2 Softmax:\n");
+        print_ndarray(layer2_outputs_softmax);
 
         destroy_ndarray(&layer1_outputs_relu);
-        destroy_ndarray(&layer2_outputs_relu);
+        destroy_ndarray(&layer2_outputs_softmax);
     }
 
     print_ndarray(dataset.train_labels);

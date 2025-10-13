@@ -22,12 +22,18 @@ int _countlines_in_file(char *filename){
     return lines;
 }
 
+float* convert_int_to_one_hot(int var, int n_categories){
+    float* oneshot = (float*)calloc(n_categories, sizeof(float));
+    oneshot[var] = 1.0;
+    return oneshot;
+}
+
 /*
 Will load the data from a CSV into a dataset struct.
 The last column of the CSV will be used as label while the other ones will serve as inputs.
 This code will assume that the first line of the CSV file are the name of the columns.
 */
-void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size){
+void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size, int n_categories){
     // get the number of lines in the csv file
     int nb_lines = _countlines_in_file(csv_path);
     dataset->nb_data = nb_lines - 1; // -1 because of the header
@@ -72,16 +78,13 @@ void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size){
             }
             
 
-            int train_label_shape[2] = {
+            int train_label_shape[3] = {
                 n_batch, // number of batches
-                batch_size
+                batch_size,
+                n_categories
             };
-            init_ndarray(&dataset->train_labels, 2, train_label_shape, 0.0);
-            label_values = (float*)malloc(dataset->train_labels.total_size * sizeof(float));
-            for (int i = 0; i < dataset->train_labels.total_size; i++)
-            {
-                label_values[i] = 0;
-            }
+            init_ndarray(&dataset->train_labels, 3, train_label_shape, 0.0);
+            label_values = (float*)calloc(dataset->train_labels.total_size, sizeof(float));
             
         }else{
             // read each column and add the value to the train dataset
@@ -94,7 +97,10 @@ void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size){
                     dataset_values[dataset_values_index] = value;
                     dataset_values_index++;
                 }else{
-                    label_values[line_index-1] = value;
+                    // set the label as a one-hot encoded label
+                    float *onehot = convert_int_to_one_hot((int) value, n_categories);
+                    memcpy(&label_values[(line_index-1) * n_categories], onehot, n_categories * sizeof(float));
+                    free(onehot);
                 }
                 
                 token = strtok(NULL, ",");

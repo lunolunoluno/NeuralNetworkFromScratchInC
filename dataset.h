@@ -15,7 +15,7 @@ typedef struct dataset
     ndarray validate_labels; // unused so far
 }dataset;
 
-void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size);
+void init_dataset_from_csv(dataset *dataset, char csv_path[], int batch_size, int n_categories);
 void destroy_dataset(dataset *dataset);
 
 #endif

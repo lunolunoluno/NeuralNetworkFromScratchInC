@@ -78,6 +78,9 @@ int main(){
         printf("Expected Output:\n");
         print_ndarray(expected_output);
 
+        float loss_categorical_crossentropy = calculate_loss_categorical_crossentropy(layer2_outputs_softmax, expected_output);
+        printf("Loss: %f\n", loss_categorical_crossentropy);
+
         destroy_ndarray(&layer1_outputs_relu);
         destroy_ndarray(&layer2_outputs_softmax);
         destroy_ndarray(&expected_output);

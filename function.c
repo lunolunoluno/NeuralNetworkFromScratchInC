@@ -51,3 +51,29 @@ ndarray softmax_forward_vector(const ndarray arr){
     free(probabilities);
     return out;
 }
+
+
+float calculate_loss_categorical_crossentropy(const ndarray pred, const ndarray label){
+    assert(pred.dimension == 2 && label.dimension == 2);
+    assert(pred.shape[0] == label.shape[0] && pred.shape[1] == label.shape[1]);
+    int n_samples = pred.shape[0];
+    int n_classes = pred.shape[1];
+    float negative_log_likelihoods = 0.0f;
+
+    for (int i = 0; i < n_samples; i++) {
+        float correct_confidences = 0.0f;
+        int offset = i * n_classes;  
+
+        for (int j = 0; j < n_classes; j++) {
+            correct_confidences += pred.data[offset + j] * label.data[offset + j];
+        }
+
+        if (correct_confidences < 1e-15f){
+            correct_confidences = 1e-15f; 
+        }
+
+        negative_log_likelihoods += -logf(correct_confidences);
+    }
+    float average_loss = negative_log_likelihoods / n_samples;
+    return average_loss;
+}

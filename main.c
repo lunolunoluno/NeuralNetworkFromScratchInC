@@ -22,6 +22,7 @@ int main()
 {
     // INIT VARIABLES
     float *inputs = calloc(INPUT_SIZE, sizeof(float));
+    float *label_one_hot = calloc(LAYER2_NB_NEURONS, sizeof(float));
 
     float *layer1_biases = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float **layer1_weights = malloc(LAYER1_NB_NEURONS * sizeof(float *));
@@ -40,11 +41,13 @@ int main()
     }
     float *layer2_output = calloc(LAYER2_NB_NEURONS, sizeof(float));
     float *layer2_softmax = calloc(LAYER2_NB_NEURONS, sizeof(float));
+    float *layer2_d_softmax = calloc(LAYER2_NB_NEURONS, sizeof(float));
 
     // GIVE VARIABLES INITIAL VALUES
     inputs[0] = -0.8326189893369458;
     inputs[1] = -0.5538462048218106;
     int label = 0;
+    label_one_hot[label] = 1.0;
 
     float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
                                                                    0.00400157, 0.01867558,
@@ -61,6 +64,19 @@ int main()
     layer2_biases[0] = -0.1;
     layer2_biases[1] = 0.002;
     layer2_biases[2] = -0.0005;
+    
+    printf("INPUTS: ");
+    for (int i = 0; i < INPUT_SIZE; i++)
+    {
+        printf("%f, ",inputs[i]);
+    }
+    printf("\n");
+    printf("ONE-HOT LABEL: ");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        printf("%f, ",label_one_hot[i]);
+    }
+    printf("\n");
 
     // FEED FORWARD LAYER 1
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -152,7 +168,21 @@ int main()
     float loss = -log(layer2_softmax[label]);
     printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
 
+    // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY (easier to implement)
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        layer2_d_softmax[i] = layer2_softmax[i] - label_one_hot[i];
+    }
+
+    printf("BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY: ");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        printf("%f,", layer2_d_softmax[i]);
+    }
+    printf("\n");
+
     // FREE VARIABLES
+    free(layer2_d_softmax);
     free(layer2_softmax);
     free(layer2_output);
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
@@ -171,6 +201,7 @@ int main()
     free(layer1_weights);
     free(layer1_biases);
 
+    free(label_one_hot);
     free(inputs);
     return 0;
 }

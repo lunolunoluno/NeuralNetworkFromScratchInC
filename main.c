@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define INPUT_SIZE 2
 #define LAYER1_NB_NEURONS 3
@@ -38,11 +39,12 @@ int main()
         layer2_weights[i] = calloc(LAYER1_NB_NEURONS, sizeof(float));
     }
     float *layer2_output = calloc(LAYER2_NB_NEURONS, sizeof(float));
+    float *layer2_softmax = calloc(LAYER2_NB_NEURONS, sizeof(float));
 
     // GIVE VARIABLES INITIAL VALUES
     inputs[0] = -0.8326189893369458;
     inputs[1] = -0.5538462048218106;
-    int label = 0;
+    // int label = 0; // unused for now
 
     float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
                                                                    0.00400157, 0.01867558,
@@ -52,13 +54,13 @@ int main()
     layer1_biases[1] = 0.003;
     layer1_biases[2] = 0.0005;
 
-    float layer2_weights_values[LAYER1_NB_NEURONS * LAYER2_NB_NEURONS] = {0.1, -0.14, 0.5,
-                                                                          -0.5, 0.12, -0.33,
-                                                                          -0.44, 0.73, -0.13};
+    float layer2_weights_values[LAYER1_NB_NEURONS * LAYER2_NB_NEURONS] = {0.00950088, -0.00151357, -0.00103219,
+                                                                          0.00410599, 0.00144044, 0.01454273,
+                                                                          0.00761038, 0.00121675, 0.00443863};
     set_weights_value(layer2_weights, LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, layer2_weights_values);
-    layer2_biases[0] = -1.0;
-    layer2_biases[1] = 2.0;
-    layer2_biases[2] = -0.5;
+    layer2_biases[0] = -0.1;
+    layer2_biases[1] = 0.002;
+    layer2_biases[2] = -0.0005;
 
     // FEED FORWARD LAYER 1
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -92,7 +94,7 @@ int main()
     {
         printf("%f,", layer1_relu[i]);
     }
-    printf("\n");  
+    printf("\n");
 
     // FEED FORWARD LAYER 2
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
@@ -100,9 +102,11 @@ int main()
         float neuron_output = 0.0;
         for (int j = 0; j < LAYER1_NB_NEURONS; j++)
         {
-            neuron_output += layer1_output[j] * layer2_weights[i][j];
+            neuron_output += layer1_relu[j] * layer2_weights[i][j];
+            // printf("%f * %f = %f\n", layer1_relu[j], layer2_weights[i][j], neuron_output);
         }
         neuron_output += layer2_biases[i];
+        // printf("+ %f = %f\n", layer2_biases[i], neuron_output);
         layer2_output[i] = neuron_output;
     }
 
@@ -113,7 +117,38 @@ int main()
     }
     printf("\n");
 
+    // LAYER 2 SOFTMAX
+    // get max value
+    float layer2_output_max = 0;
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        if (layer2_output[i] > layer2_output_max)
+        {
+            layer2_output_max = layer2_output[i];
+        }
+    }
+    // get unnormalized probabilities
+    float exp_sum = 0;
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        layer2_softmax[i] = exp(layer2_output[i] - layer2_output_max);
+        exp_sum += layer2_softmax[i];
+    }
+    // normalize the probabilities
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        layer2_softmax[i] = layer2_softmax[i] / exp_sum;
+    }
+
+    printf("LAYER 2 SOFTMAX: ");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        printf("%f,", layer2_softmax[i]);
+    }
+    printf("\n");
+
     // FREE VARIABLES
+    free(layer2_softmax);
     free(layer2_output);
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {

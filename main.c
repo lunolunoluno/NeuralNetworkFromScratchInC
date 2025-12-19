@@ -44,7 +44,7 @@ int main()
     // GIVE VARIABLES INITIAL VALUES
     inputs[0] = -0.8326189893369458;
     inputs[1] = -0.5538462048218106;
-    // int label = 0; // unused for now
+    int label = 0;
 
     float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
                                                                    0.00400157, 0.01867558,
@@ -146,6 +146,11 @@ int main()
         printf("%f,", layer2_softmax[i]);
     }
     printf("\n");
+
+    // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
+    layer2_softmax[label] = (layer2_softmax[label] <= 0) ? 0.0000001 : layer2_softmax[label];
+    float loss = -log(layer2_softmax[label]);
+    printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
 
     // FREE VARIABLES
     free(layer2_softmax);

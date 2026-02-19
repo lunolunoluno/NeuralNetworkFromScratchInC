@@ -33,11 +33,15 @@ int main()
     float *layer1_output = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float *layer1_relu = calloc(LAYER1_NB_NEURONS, sizeof(float));
 
+    float *layer2_d_inputs = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float *layer2_biases = calloc(LAYER2_NB_NEURONS, sizeof(float));
+    float *layer2_d_biases = calloc(LAYER2_NB_NEURONS, sizeof(float));
     float **layer2_weights = malloc(LAYER2_NB_NEURONS * sizeof(float *));
+    float **layer2_d_weights = malloc(LAYER2_NB_NEURONS * sizeof(float *));
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         layer2_weights[i] = calloc(LAYER1_NB_NEURONS, sizeof(float));
+        layer2_d_weights[i] = calloc(LAYER1_NB_NEURONS, sizeof(float));
     }
     float *layer2_output = calloc(LAYER2_NB_NEURONS, sizeof(float));
     float *layer2_softmax = calloc(LAYER2_NB_NEURONS, sizeof(float));
@@ -64,17 +68,17 @@ int main()
     layer2_biases[0] = -0.1;
     layer2_biases[1] = 0.002;
     layer2_biases[2] = -0.0005;
-    
+
     printf("INPUTS: ");
     for (int i = 0; i < INPUT_SIZE; i++)
     {
-        printf("%f, ",inputs[i]);
+        printf("%f, ", inputs[i]);
     }
     printf("\n");
     printf("ONE-HOT LABEL: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
-        printf("%f, ",label_one_hot[i]);
+        printf("%f, ", label_one_hot[i]);
     }
     printf("\n");
 
@@ -168,16 +172,52 @@ int main()
     float loss = -log(layer2_softmax[label]);
     printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
 
-    // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY (easier to implement)
+    // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         layer2_d_softmax[i] = layer2_softmax[i] - label_one_hot[i];
     }
 
-    printf("BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY: ");
+    printf("BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         printf("%f,", layer2_d_softmax[i]);
+    }
+    printf("\n");
+
+    // BACKPROPAGATION LAYER 2
+    // gradients on parameters
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        layer2_d_biases[i] = layer2_d_softmax[i]; // this is because there is no batch implemented yet
+        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
+        {
+            layer2_d_weights[i][j] = layer1_relu[j] * layer2_d_softmax[i];
+
+            // gradient on values
+            layer2_d_inputs[j] += layer2_d_softmax[i] * layer2_weights[i][j];
+        }
+    }
+
+    printf("BACKPROPAGATION OF LAYER 2 inputs gradient:");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        printf("%f,", layer2_d_inputs[i]);
+    }
+    printf("\n");
+    printf("BACKPROPAGATION OF LAYER 2 weights gradient: \n");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
+        {
+            printf("%f,", layer2_d_weights[i][j]);
+        }
+        printf("\n");
+    }
+    printf("BACKPROPAGATION OF LAYER 2 biases gradient:");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        printf("%f,", layer2_d_biases[i]);
     }
     printf("\n");
 
@@ -188,9 +228,13 @@ int main()
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         free(layer2_weights[i]);
+        free(layer2_d_weights[i]);
     }
     free(layer2_weights);
+    free(layer2_d_weights);
     free(layer2_biases);
+    free(layer2_d_biases);
+    free(layer2_d_inputs);
 
     free(layer1_relu);
     free(layer1_output);

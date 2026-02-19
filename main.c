@@ -25,13 +25,17 @@ int main()
     float *label_one_hot = calloc(LAYER2_NB_NEURONS, sizeof(float));
 
     float *layer1_biases = calloc(LAYER1_NB_NEURONS, sizeof(float));
+    float *layer1_d_biases = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float **layer1_weights = malloc(LAYER1_NB_NEURONS * sizeof(float *));
+    float **layer1_d_weights = malloc(LAYER1_NB_NEURONS * sizeof(float *));
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         layer1_weights[i] = calloc(INPUT_SIZE, sizeof(float));
+        layer1_d_weights[i] = calloc(INPUT_SIZE, sizeof(float));
     }
     float *layer1_output = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float *layer1_relu = calloc(LAYER1_NB_NEURONS, sizeof(float));
+    float *layer1_d_relu = calloc(LAYER1_NB_NEURONS, sizeof(float));
 
     float *layer2_d_inputs = calloc(LAYER1_NB_NEURONS, sizeof(float));
     float *layer2_biases = calloc(LAYER2_NB_NEURONS, sizeof(float));
@@ -221,6 +225,49 @@ int main()
     }
     printf("\n");
 
+    // BACKPROPAGATION LAYER 1 RELU
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        layer1_d_relu[i] = (layer1_output[i] <= 0) ? 0 : layer2_d_inputs[i];
+    }
+
+    printf("LAYER 1 RELU BACKWARD: ");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        printf("%f,", layer1_d_relu[i]);
+    }
+    printf("\n");
+
+    // BACKPROPAGATION LAYER 1
+    // gradients on parameters
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        layer1_d_biases[i] = layer1_d_relu[i]; // this is because there is no batch implemented yet
+        for (int j = 0; j < INPUT_SIZE; j++)
+        {
+            layer1_d_weights[i][j] = inputs[j] * layer1_d_relu[i];
+
+            // gradient on values
+            // no need to calculate it for the first layer
+        }
+    }
+    
+    printf("BACKPROPAGATION OF LAYER 1 weights gradient: \n");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < INPUT_SIZE; j++)
+        {
+            printf("%f,", layer1_d_weights[i][j]);
+        }
+        printf("\n");
+    }
+    printf("BACKPROPAGATION OF LAYER 1 biases gradient:");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        printf("%f,", layer1_d_biases[i]);
+    }
+    printf("\n");
+
     // FREE VARIABLES
     free(layer2_d_softmax);
     free(layer2_softmax);
@@ -236,14 +283,18 @@ int main()
     free(layer2_d_biases);
     free(layer2_d_inputs);
 
+    free(layer1_d_relu);
     free(layer1_relu);
     free(layer1_output);
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         free(layer1_weights[i]);
+        free(layer1_d_weights[i]);
     }
     free(layer1_weights);
+    free(layer1_d_weights);
     free(layer1_biases);
+    free(layer1_d_biases);
 
     free(label_one_hot);
     free(inputs);

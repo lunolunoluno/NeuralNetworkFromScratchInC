@@ -52,6 +52,7 @@ int main()
     float *layer2_d_softmax = calloc(LAYER2_NB_NEURONS, sizeof(float));
 
     // GIVE VARIABLES INITIAL VALUES
+    float learning_rate = 1.0;
     inputs[0] = -0.8326189893369458;
     inputs[1] = -0.5538462048218106;
     int label = 0;
@@ -265,6 +266,58 @@ int main()
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1_d_biases[i]);
+    }
+    printf("\n");
+
+
+    // UPDATE PARAMETERS WITH SGD
+    // Layer 1
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < INPUT_SIZE; j++)
+        {
+            layer1_weights[i][j] += -learning_rate * layer1_d_weights[i][j];
+        }
+        layer1_biases[i] += -learning_rate * layer1_d_biases[i];
+    }
+    printf("UPDATED LAYER 1 weights: \n");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < INPUT_SIZE; j++)
+        {
+            printf("%f,", layer1_weights[i][j]);
+        }
+        printf("\n");
+    }
+    printf("UPDATED LAYER 1 biases:");
+    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
+    {
+        printf("%f,", layer1_biases[i]);
+    }
+    printf("\n");
+
+    // Layer 2
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
+        {
+            layer2_weights[i][j] += -learning_rate * layer2_d_weights[i][j];
+        }
+        layer2_biases[i] += -learning_rate * layer2_d_biases[i];
+    }
+    printf("UPDATED LAYER 2 weights: \n");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
+        {
+            printf("%f,", layer2_weights[i][j]);
+        }
+        printf("\n");
+    }
+    printf("UPDATED LAYER 2 biases:");
+    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
+    {
+        printf("%f,", layer2_biases[i]);
     }
     printf("\n");
 

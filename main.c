@@ -68,30 +68,19 @@ int main()
 
 
     // FEED FORWARD LAYER 1
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        float neuron_output = 0.0;
-        for (int j = 0; j < INPUT_SIZE; j++)
-        {
-            neuron_output += layer1.inputs[j] * layer1.weights[i][j];
-        }
-        neuron_output += layer1.biases[i];
-        layer1.outputs[i] = neuron_output;
-    }
+    layer_forward(&layer1);
 
     printf("LAYER 1 OUTPUT: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1.outputs[i]);
+        // transfer output to activation function
+        layer1_relu.inputs[i] = layer1.outputs[i];
     }
     printf("\n");
 
     // LAYER 1 ReLU
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        layer1_relu.inputs[i] = layer1.outputs[i];
-        layer1_relu.outputs[i] = (layer1_relu.inputs[i] > 0.0) ? layer1_relu.inputs[i] : 0.0;
-    }
+    relu_forward(&layer1_relu);
 
     printf("LAYER 1 RELU: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -103,47 +92,19 @@ int main()
     printf("\n");
 
     // FEED FORWARD LAYER 2
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        float neuron_output = 0.0;
-        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
-        {
-            neuron_output += layer2.inputs[j] * layer2.weights[i][j];
-        }
-        neuron_output += layer2.biases[i];
-        layer2.outputs[i] = neuron_output;
-    }
+    layer_forward(&layer2);
 
     printf("LAYER 2 OUTPUT: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         printf("%f,", layer2.outputs[i]);
+        // transfer output to activation function
         layer2_softmax.inputs[i] = layer2.outputs[i];
     }
     printf("\n");
 
     // LAYER 2 SOFTMAX
-    // get max value
-    float softmax_input_max = 0;
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        if (layer2_softmax.inputs[i] > softmax_input_max)
-        {
-            softmax_input_max = layer2_softmax.inputs[i];
-        }
-    }
-    // get unnormalized probabilities
-    float exp_sum = 0;
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        layer2_softmax.outputs[i] = exp(layer2.outputs[i] - softmax_input_max);
-        exp_sum += layer2_softmax.outputs[i];
-    }
-    // normalize the probabilities
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        layer2_softmax.outputs[i] = layer2_softmax.outputs[i] / exp_sum;
-    }
+    softmax_forward(&layer2_softmax);
 
     printf("LAYER 2 SOFTMAX: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
@@ -153,8 +114,7 @@ int main()
     printf("\n");
 
     // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
-    layer2_softmax.outputs[label] = (layer2_softmax.outputs[label] <= 0) ? 0.0000001 : layer2_softmax.outputs[label];
-    float loss = -log(layer2_softmax.outputs[label]);
+    float loss = calculate_crossentropy_loss(&layer2_softmax, label);
     printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
 
     // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)

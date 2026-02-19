@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include "utils.h"
 #include "layer.h"
 
@@ -18,7 +19,7 @@ void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
     {
         layer->weights[i] = calloc(nb_inputs, sizeof(float));
         layer->dweights[i] = calloc(nb_inputs, sizeof(float));
-        
+
         // init biases with random values
         layer->biases[i] = get_random_float(-1.0, 1.0);
     }
@@ -47,6 +48,20 @@ void destroy_layer(layer_params *layer)
     free(layer->outputs);
 }
 
+void layer_forward(layer_params *layer)
+{
+    for (int i = 0; i < layer->nb_neurons; i++)
+    {
+        float neuron_output = 0.0;
+        for (int j = 0; j < layer->nb_inputs; j++)
+        {
+            neuron_output += layer->inputs[j] * layer->weights[i][j];
+        }
+        neuron_output += layer->biases[i];
+        layer->outputs[i] = neuron_output;
+    }
+}
+
 void init_activation(int nb_neurons, activation_params *activation)
 {
     activation->nb_neurons = nb_neurons;
@@ -60,4 +75,43 @@ void destroy_activation(activation_params *activation)
     free(activation->inputs);
     free(activation->dinputs);
     free(activation->outputs);
+}
+
+void relu_forward(activation_params *relu)
+{
+    for (int i = 0; i < relu->nb_neurons; i++)
+    {
+        relu->outputs[i] = (relu->inputs[i] > 0.0) ? relu->inputs[i] : 0.0;
+    }
+}
+
+void softmax_forward(activation_params *softmax)
+{
+    // get max value
+    float softmax_input_max = 0;
+    for (int i = 0; i < softmax->nb_neurons; i++)
+    {
+        if (softmax->inputs[i] > softmax_input_max)
+        {
+            softmax_input_max = softmax->inputs[i];
+        }
+    }
+    // get unnormalized probabilities
+    float exp_sum = 0;
+    for (int i = 0; i < softmax->nb_neurons; i++)
+    {
+        softmax->outputs[i] = exp(softmax->inputs[i] - softmax_input_max);
+        exp_sum += softmax->outputs[i];
+    }
+    // normalize the probabilities
+    for (int i = 0; i < softmax->nb_neurons; i++)
+    {
+        softmax->outputs[i] = softmax->outputs[i] / exp_sum;
+    }
+}
+
+float calculate_crossentropy_loss(activation_params *softmax, int label_index)
+{
+    float prediction = (softmax->outputs[label_index] <= 0) ? 0.0000001 : softmax->outputs[label_index];
+    return -log(prediction);
 }

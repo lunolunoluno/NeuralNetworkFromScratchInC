@@ -2,59 +2,62 @@
 #include "utils.h"
 #include "layer.h"
 
-void init_layer(int nb_inputs, int nb_neurons, layer_params *params)
+void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
 {
-    params->nb_inputs = nb_inputs;
-    params->nb_neurons = nb_neurons;
+    layer->nb_inputs = nb_inputs;
+    layer->nb_neurons = nb_neurons;
 
-    params->inputs = calloc(nb_inputs, sizeof(float));
-    params->dinputs = calloc(nb_inputs, sizeof(float));
+    layer->inputs = calloc(nb_inputs, sizeof(float));
+    layer->dinputs = calloc(nb_inputs, sizeof(float));
 
-    params->biases = calloc(nb_neurons, sizeof(float));
-    params->dbiases = calloc(nb_neurons, sizeof(float));
-    params->weights = malloc(nb_neurons * sizeof(float *));
-    params->dweights = malloc(nb_neurons * sizeof(float *));
+    layer->biases = calloc(nb_neurons, sizeof(float));
+    layer->dbiases = calloc(nb_neurons, sizeof(float));
+    layer->weights = malloc(nb_neurons * sizeof(float *));
+    layer->dweights = malloc(nb_neurons * sizeof(float *));
     for (int i = 0; i < nb_neurons; i++)
     {
-        params->weights[i] = calloc(nb_inputs, sizeof(float));
-        params->dweights[i] = calloc(nb_inputs, sizeof(float));
+        layer->weights[i] = calloc(nb_inputs, sizeof(float));
+        layer->dweights[i] = calloc(nb_inputs, sizeof(float));
+        
+        // init biases with random values
+        layer->biases[i] = get_random_float(-1.0, 1.0);
     }
 
     // init weights with random values
     float *weight_values = get_random_array(nb_inputs * nb_neurons, -1.0, 1.0);
-    set_2darray_value(params->weights, nb_inputs, nb_neurons, weight_values);
+    set_2darray_value(layer->weights, nb_inputs, nb_neurons, weight_values);
     free(weight_values);
 
-    params->outputs = calloc(nb_neurons, sizeof(float));
+    layer->outputs = calloc(nb_neurons, sizeof(float));
 }
 
-void destroy_layer(layer_params *params)
+void destroy_layer(layer_params *layer)
 {
-    free(params->inputs);
-    free(params->dinputs);
-    free(params->biases);
-    free(params->dbiases);
-    for (int i = 0; i < params->nb_neurons; i++)
+    free(layer->inputs);
+    free(layer->dinputs);
+    free(layer->biases);
+    free(layer->dbiases);
+    for (int i = 0; i < layer->nb_neurons; i++)
     {
-        free(params->weights[i]);
-        free(params->dweights[i]);
+        free(layer->weights[i]);
+        free(layer->dweights[i]);
     }
-    free(params->weights);
-    free(params->dweights);
-    free(params->outputs);
+    free(layer->weights);
+    free(layer->dweights);
+    free(layer->outputs);
 }
 
-void init_activation(int nb_neurons, activation_params *params)
+void init_activation(int nb_neurons, activation_params *activation)
 {
-    params->nb_neurons = nb_neurons;
-    params->inputs = calloc(nb_neurons, sizeof(float));
-    params->dinputs = calloc(nb_neurons, sizeof(float));
-    params->outputs = calloc(nb_neurons, sizeof(float));
+    activation->nb_neurons = nb_neurons;
+    activation->inputs = calloc(nb_neurons, sizeof(float));
+    activation->dinputs = calloc(nb_neurons, sizeof(float));
+    activation->outputs = calloc(nb_neurons, sizeof(float));
 }
 
-void destroy_activation(activation_params *params)
+void destroy_activation(activation_params *activation)
 {
-    free(params->inputs);
-    free(params->dinputs);
-    free(params->outputs);
+    free(activation->inputs);
+    free(activation->dinputs);
+    free(activation->outputs);
 }

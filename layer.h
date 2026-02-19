@@ -14,8 +14,8 @@ typedef struct layer_params
     float *outputs;
 } layer_params;
 
-void init_layer(int nb_inputs, int nb_neurons, layer_params *params);
-void destroy_layer(layer_params *params);
+void init_layer(int nb_inputs, int nb_neurons, layer_params *layer);
+void destroy_layer(layer_params *layer);
 
 typedef struct activation_params
 {
@@ -25,7 +25,7 @@ typedef struct activation_params
     float *outputs;
 } activation_params;
 
-void init_activation(int nb_neurons, activation_params *params);
-void destroy_activation(activation_params *params);
+void init_activation(int nb_neurons, activation_params *activation);
+void destroy_activation(activation_params *activation);
 
 #endif

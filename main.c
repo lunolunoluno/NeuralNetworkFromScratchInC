@@ -118,10 +118,7 @@ int main()
     printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
 
     // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        layer2_softmax.dinputs[i] = layer2_softmax.outputs[i] - label_one_hot[i];
-    }
+    softmax_crossentropy_backward(&layer2_softmax, label_one_hot);
 
     printf("BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
@@ -131,18 +128,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 2
-    // gradients on parameters
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        layer2.dbiases[i] = layer2_softmax.dinputs[i]; // this is because there is no batch implemented yet
-        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
-        {
-            layer2.dweights[i][j] = layer2.inputs[j] * layer2_softmax.dinputs[i];
-
-            // gradient on values
-            layer2.dinputs[j] += layer2_softmax.dinputs[i] * layer2.weights[i][j];
-        }
-    }
+    layer_backward(&layer2, layer2_softmax.dinputs);
 
     printf("BACKPROPAGATION OF LAYER 2 inputs gradient:");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -167,10 +153,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 1 RELU
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        layer1_relu.dinputs[i] = (layer1_relu.inputs[i] <= 0) ? 0 : layer2.dinputs[i];
-    }
+    relu_backward(&layer1_relu, layer2.dinputs);
 
     printf("LAYER 1 RELU BACKWARD: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -180,18 +163,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 1
-    // gradients on parameters
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        layer1.dbiases[i] = layer1_relu.dinputs[i]; // this is because there is no batch implemented yet
-        for (int j = 0; j < INPUT_SIZE; j++)
-        {
-            layer1.dweights[i][j] = layer1.inputs[j] * layer1_relu.dinputs[i];
-
-            // gradient on values
-            // no need to calculate it for the first layer
-        }
-    }
+    layer_backward(&layer1, layer1_relu.dinputs);
     
     printf("BACKPROPAGATION OF LAYER 1 weights gradient: \n");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)

@@ -62,6 +62,22 @@ void layer_forward(layer_params *layer)
     }
 }
 
+void layer_backward(layer_params *layer, float *dvalues)
+{
+    // gradients on parameters
+    for (int i = 0; i < layer->nb_neurons; i++)
+    {
+        layer->dbiases[i] = dvalues[i]; // this is because there is no batch implemented yet
+        for (int j = 0; j < layer->nb_inputs; j++)
+        {
+            layer->dweights[i][j] = layer->inputs[j] * dvalues[i];
+
+            // gradient on values
+            layer->dinputs[j] += dvalues[i] * layer->weights[i][j];
+        }
+    }
+}
+
 void init_activation(int nb_neurons, activation_params *activation)
 {
     activation->nb_neurons = nb_neurons;
@@ -82,6 +98,14 @@ void relu_forward(activation_params *relu)
     for (int i = 0; i < relu->nb_neurons; i++)
     {
         relu->outputs[i] = (relu->inputs[i] > 0.0) ? relu->inputs[i] : 0.0;
+    }
+}
+
+void relu_backward(activation_params *relu, float *dvalues)
+{
+    for (int i = 0; i < relu->nb_neurons; i++)
+    {
+        relu->dinputs[i] = (relu->inputs[i] <= 0) ? 0 : dvalues[i];
     }
 }
 
@@ -107,6 +131,14 @@ void softmax_forward(activation_params *softmax)
     for (int i = 0; i < softmax->nb_neurons; i++)
     {
         softmax->outputs[i] = softmax->outputs[i] / exp_sum;
+    }
+}
+
+void softmax_crossentropy_backward(activation_params *softmax, float *label_one_hot)
+{
+    for (int i = 0; i < softmax->nb_neurons; i++)
+    {
+        softmax->dinputs[i] = softmax->outputs[i] - label_one_hot[i];
     }
 }
 

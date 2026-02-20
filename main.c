@@ -31,8 +31,8 @@ int main()
     label_one_hot[label] = 1.0;
 
     init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, &layer1);
-    layer1.inputs[0] = inputs[0];
-    layer1.inputs[1] = inputs[1];
+    // layer1.inputs[0] = inputs[0];
+    // layer1.inputs[1] = inputs[1];
 
     float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
                                                                    0.00400157, 0.01867558,
@@ -68,43 +68,43 @@ int main()
 
 
     // FEED FORWARD LAYER 1
-    layer_forward(&layer1);
+    layer_forward(&layer1, inputs);
 
     printf("LAYER 1 OUTPUT: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1.outputs[i]);
         // transfer output to activation function
-        layer1_relu.inputs[i] = layer1.outputs[i];
+        // layer1_relu.inputs[i] = layer1.outputs[i];
     }
     printf("\n");
 
     // LAYER 1 ReLU
-    relu_forward(&layer1_relu);
+    relu_forward(&layer1_relu, layer1.outputs);
 
     printf("LAYER 1 RELU: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1_relu.outputs[i]);
         // transfer value to next layer
-        layer2.inputs[i] = layer1_relu.outputs[i];
+        // layer2.inputs[i] = layer1_relu.outputs[i];
     }
     printf("\n");
 
     // FEED FORWARD LAYER 2
-    layer_forward(&layer2);
+    layer_forward(&layer2, layer1_relu.outputs);
 
     printf("LAYER 2 OUTPUT: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         printf("%f,", layer2.outputs[i]);
         // transfer output to activation function
-        layer2_softmax.inputs[i] = layer2.outputs[i];
+        // layer2_softmax.inputs[i] = layer2.outputs[i];
     }
     printf("\n");
 
     // LAYER 2 SOFTMAX
-    softmax_forward(&layer2_softmax);
+    softmax_forward(&layer2_softmax, layer2.outputs);
 
     printf("LAYER 2 SOFTMAX: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
@@ -128,7 +128,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 2
-    layer_backward(&layer2, layer2_softmax.dinputs);
+    layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
 
     printf("BACKPROPAGATION OF LAYER 2 inputs gradient:");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -153,7 +153,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 1 RELU
-    relu_backward(&layer1_relu, layer2.dinputs);
+    relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
 
     printf("LAYER 1 RELU BACKWARD: ");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
@@ -163,7 +163,7 @@ int main()
     printf("\n");
 
     // BACKPROPAGATION LAYER 1
-    layer_backward(&layer1, layer1_relu.dinputs);
+    layer_backward(&layer1, inputs, layer1_relu.dinputs);
     
     printf("BACKPROPAGATION OF LAYER 1 weights gradient: \n");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)

@@ -8,7 +8,6 @@ void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
     layer->nb_inputs = nb_inputs;
     layer->nb_neurons = nb_neurons;
 
-    layer->inputs = calloc(nb_inputs, sizeof(float));
     layer->dinputs = calloc(nb_inputs, sizeof(float));
 
     layer->biases = calloc(nb_neurons, sizeof(float));
@@ -34,7 +33,6 @@ void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
 
 void destroy_layer(layer_params *layer)
 {
-    free(layer->inputs);
     free(layer->dinputs);
     free(layer->biases);
     free(layer->dbiases);
@@ -48,21 +46,21 @@ void destroy_layer(layer_params *layer)
     free(layer->outputs);
 }
 
-void layer_forward(layer_params *layer)
+void layer_forward(layer_params *layer, float* inputs)
 {
     for (int i = 0; i < layer->nb_neurons; i++)
     {
         float neuron_output = 0.0;
         for (int j = 0; j < layer->nb_inputs; j++)
         {
-            neuron_output += layer->inputs[j] * layer->weights[i][j];
+            neuron_output += inputs[j] * layer->weights[i][j];
         }
         neuron_output += layer->biases[i];
         layer->outputs[i] = neuron_output;
     }
 }
 
-void layer_backward(layer_params *layer, float *dvalues)
+void layer_backward(layer_params *layer, float* layer_inputs, float *dvalues)
 {
     // gradients on parameters
     for (int i = 0; i < layer->nb_neurons; i++)
@@ -70,7 +68,7 @@ void layer_backward(layer_params *layer, float *dvalues)
         layer->dbiases[i] = dvalues[i]; // this is because there is no batch implemented yet
         for (int j = 0; j < layer->nb_inputs; j++)
         {
-            layer->dweights[i][j] = layer->inputs[j] * dvalues[i];
+            layer->dweights[i][j] = layer_inputs[j] * dvalues[i];
 
             // gradient on values
             layer->dinputs[j] += dvalues[i] * layer->weights[i][j];
@@ -81,50 +79,48 @@ void layer_backward(layer_params *layer, float *dvalues)
 void init_activation(int nb_neurons, activation_params *activation)
 {
     activation->nb_neurons = nb_neurons;
-    activation->inputs = calloc(nb_neurons, sizeof(float));
     activation->dinputs = calloc(nb_neurons, sizeof(float));
     activation->outputs = calloc(nb_neurons, sizeof(float));
 }
 
 void destroy_activation(activation_params *activation)
 {
-    free(activation->inputs);
     free(activation->dinputs);
     free(activation->outputs);
 }
 
-void relu_forward(activation_params *relu)
+void relu_forward(activation_params *relu, float *inputs)
 {
     for (int i = 0; i < relu->nb_neurons; i++)
     {
-        relu->outputs[i] = (relu->inputs[i] > 0.0) ? relu->inputs[i] : 0.0;
+        relu->outputs[i] = (inputs[i] > 0.0) ? inputs[i] : 0.0;
     }
 }
 
-void relu_backward(activation_params *relu, float *dvalues)
+void relu_backward(activation_params *relu, float* relu_inputs, float *dvalues)
 {
     for (int i = 0; i < relu->nb_neurons; i++)
     {
-        relu->dinputs[i] = (relu->inputs[i] <= 0) ? 0 : dvalues[i];
+        relu->dinputs[i] = (relu_inputs[i] <= 0) ? 0 : dvalues[i];
     }
 }
 
-void softmax_forward(activation_params *softmax)
+void softmax_forward(activation_params *softmax, float *inputs)
 {
     // get max value
     float softmax_input_max = 0;
     for (int i = 0; i < softmax->nb_neurons; i++)
     {
-        if (softmax->inputs[i] > softmax_input_max)
+        if (inputs[i] > softmax_input_max)
         {
-            softmax_input_max = softmax->inputs[i];
+            softmax_input_max = inputs[i];
         }
     }
     // get unnormalized probabilities
     float exp_sum = 0;
     for (int i = 0; i < softmax->nb_neurons; i++)
     {
-        softmax->outputs[i] = exp(softmax->inputs[i] - softmax_input_max);
+        softmax->outputs[i] = exp(inputs[i] - softmax_input_max);
         exp_sum += softmax->outputs[i];
     }
     // normalize the probabilities

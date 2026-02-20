@@ -46,7 +46,7 @@ void destroy_layer(layer_params *layer)
     free(layer->outputs);
 }
 
-void layer_forward(layer_params *layer, float* inputs)
+void layer_forward(layer_params *layer, float *inputs)
 {
     for (int i = 0; i < layer->nb_neurons; i++)
     {
@@ -60,7 +60,7 @@ void layer_forward(layer_params *layer, float* inputs)
     }
 }
 
-void layer_backward(layer_params *layer, float* layer_inputs, float *dvalues)
+void layer_backward(layer_params *layer, float *layer_inputs, float *dvalues)
 {
     // gradients on parameters
     for (int i = 0; i < layer->nb_neurons; i++)
@@ -73,6 +73,18 @@ void layer_backward(layer_params *layer, float* layer_inputs, float *dvalues)
             // gradient on values
             layer->dinputs[j] += dvalues[i] * layer->weights[i][j];
         }
+    }
+}
+
+void update_layer_params(layer_params *layer, float learning_rate)
+{
+    for (int i = 0; i < layer->nb_neurons; i++)
+    {
+        for (int j = 0; j < layer->nb_inputs; j++)
+        {
+            layer->weights[i][j] += -learning_rate * layer->dweights[i][j];
+        }
+        layer->biases[i] += -learning_rate * layer->dbiases[i];
     }
 }
 
@@ -97,7 +109,7 @@ void relu_forward(activation_params *relu, float *inputs)
     }
 }
 
-void relu_backward(activation_params *relu, float* relu_inputs, float *dvalues)
+void relu_backward(activation_params *relu, float *relu_inputs, float *dvalues)
 {
     for (int i = 0; i < relu->nb_neurons; i++)
     {

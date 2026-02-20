@@ -17,6 +17,7 @@ void init_layer(int nb_inputs, int nb_neurons, layer_params *layer);
 void destroy_layer(layer_params *layer);
 void layer_forward(layer_params *layer, float* inputs);
 void layer_backward(layer_params *layer, float* layer_inputs, float *dvalues);
+void update_layer_params(layer_params *layer, float learning_rate);
 
 typedef struct activation_params
 {

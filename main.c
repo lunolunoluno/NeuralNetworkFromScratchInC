@@ -31,8 +31,6 @@ int main()
     label_one_hot[label] = 1.0;
 
     init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, &layer1);
-    // layer1.inputs[0] = inputs[0];
-    // layer1.inputs[1] = inputs[1];
 
     float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
                                                                    0.00400157, 0.01867558,
@@ -74,8 +72,6 @@ int main()
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1.outputs[i]);
-        // transfer output to activation function
-        // layer1_relu.inputs[i] = layer1.outputs[i];
     }
     printf("\n");
 
@@ -86,8 +82,6 @@ int main()
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
         printf("%f,", layer1_relu.outputs[i]);
-        // transfer value to next layer
-        // layer2.inputs[i] = layer1_relu.outputs[i];
     }
     printf("\n");
 
@@ -98,8 +92,6 @@ int main()
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         printf("%f,", layer2.outputs[i]);
-        // transfer output to activation function
-        // layer2_softmax.inputs[i] = layer2.outputs[i];
     }
     printf("\n");
 
@@ -184,14 +176,7 @@ int main()
 
     // UPDATE PARAMETERS WITH SGD
     // Layer 1
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < INPUT_SIZE; j++)
-        {
-            layer1.weights[i][j] += -learning_rate * layer1.dweights[i][j];
-        }
-        layer1.biases[i] += -learning_rate * layer1.dbiases[i];
-    }
+    update_layer_params(&layer1, learning_rate);
     printf("UPDATED LAYER 1 weights: \n");
     for (int i = 0; i < LAYER1_NB_NEURONS; i++)
     {
@@ -209,14 +194,7 @@ int main()
     printf("\n");
 
     // Layer 2
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
-        {
-            layer2.weights[i][j] += -learning_rate * layer2.dweights[i][j];
-        }
-        layer2.biases[i] += -learning_rate * layer2.dbiases[i];
-    }
+    update_layer_params(&layer2, learning_rate);
     printf("UPDATED LAYER 2 weights: \n");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {

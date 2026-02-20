@@ -1,10 +1,13 @@
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include "utils.h"
 #include "layer.h"
 
 void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
 {
+    srand((unsigned int)time(NULL));
+
     layer->nb_inputs = nb_inputs;
     layer->nb_neurons = nb_neurons;
 

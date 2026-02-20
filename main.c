@@ -8,7 +8,6 @@
 #define LAYER1_NB_NEURONS 3
 #define LAYER2_NB_NEURONS 3 // this is also the output
 
-
 int main()
 {
     // INIT VARIABLES
@@ -23,7 +22,8 @@ int main()
     activation_params layer2_softmax;
 
     // GIVE VARIABLES INITIAL VALUES
-    
+
+    int nb_epochs = 1000;
     float learning_rate = 1.0;
     inputs[0] = -0.8326189893369458;
     inputs[1] = -0.5538462048218106;
@@ -31,24 +31,9 @@ int main()
     label_one_hot[label] = 1.0;
 
     init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, &layer1);
-
-    float layer1_weights_values[INPUT_SIZE * LAYER1_NB_NEURONS] = {0.01764052, 0.02240893,
-                                                                   0.00400157, 0.01867558,
-                                                                   0.00978738, -0.00977278};
-    set_2darray_value(layer1.weights, INPUT_SIZE, LAYER1_NB_NEURONS, layer1_weights_values);
-    layer1.biases[0] = 0.2;
-    layer1.biases[1] = 0.003;
-    layer1.biases[2] = 0.0005;
-    init_activation(LAYER1_NB_NEURONS, &layer1_relu);
+    init_activation(LAYER1_NB_NEURONS, &layer1_relu); 
 
     init_layer(LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, &layer2);
-    float layer2_weights_values[LAYER1_NB_NEURONS * LAYER2_NB_NEURONS] = {0.00950088, -0.00151357, -0.00103219,
-                                                                          0.00410599, 0.00144044, 0.01454273,
-                                                                          0.00761038, 0.00121675, 0.00443863};
-    set_2darray_value(layer2.weights, LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, layer2_weights_values);
-    layer2.biases[0] = -0.1;
-    layer2.biases[1] = 0.002;
-    layer2.biases[2] = -0.0005;
     init_activation(LAYER2_NB_NEURONS, &layer2_softmax);
 
     printf("INPUTS: ");
@@ -64,152 +49,64 @@ int main()
     }
     printf("\n");
 
+    for (int epoch = 0; epoch < nb_epochs; epoch++)
+    {
+        // FEED FORWARD LAYER 1
+        layer_forward(&layer1, inputs);
 
-    // FEED FORWARD LAYER 1
+        // LAYER 1 ReLU
+        relu_forward(&layer1_relu, layer1.outputs);
+
+        // FEED FORWARD LAYER 2
+        layer_forward(&layer2, layer1_relu.outputs);
+
+        // LAYER 2 SOFTMAX
+        softmax_forward(&layer2_softmax, layer2.outputs);
+
+        // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
+        float loss = calculate_crossentropy_loss(&layer2_softmax, label);
+        if (epoch % 100 == 0)
+        {
+            printf("epoch: %d, loss: %f\n", epoch, loss);
+        }
+
+        if (loss <= 0.0000001)
+        {
+            printf("LOSS <= 0.0000001 at epoch %d!\n", epoch);
+            break;
+        }
+
+        // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
+        softmax_crossentropy_backward(&layer2_softmax, label_one_hot);
+
+        // BACKPROPAGATION LAYER 2
+        layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
+
+        // BACKPROPAGATION LAYER 1 RELU
+        relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
+
+        // BACKPROPAGATION LAYER 1
+        layer_backward(&layer1, inputs, layer1_relu.dinputs);
+
+        // UPDATE PARAMETERS WITH SGD
+        // Layer 1
+        update_layer_params(&layer1, learning_rate);
+        // Layer 2
+        update_layer_params(&layer2, learning_rate);
+    }
+
     layer_forward(&layer1, inputs);
-
-    printf("LAYER 1 OUTPUT: ");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer1.outputs[i]);
-    }
-    printf("\n");
-
-    // LAYER 1 ReLU
     relu_forward(&layer1_relu, layer1.outputs);
-
-    printf("LAYER 1 RELU: ");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer1_relu.outputs[i]);
-    }
-    printf("\n");
-
-    // FEED FORWARD LAYER 2
     layer_forward(&layer2, layer1_relu.outputs);
-
-    printf("LAYER 2 OUTPUT: ");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        printf("%f,", layer2.outputs[i]);
-    }
-    printf("\n");
-
-    // LAYER 2 SOFTMAX
     softmax_forward(&layer2_softmax, layer2.outputs);
-
-    printf("LAYER 2 SOFTMAX: ");
+    printf("NETWORK PREDICTION: ");
     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
     {
         printf("%f,", layer2_softmax.outputs[i]);
     }
     printf("\n");
-
-    // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
     float loss = calculate_crossentropy_loss(&layer2_softmax, label);
-    printf("CATEGORICAL CROSS-ENTROPY LOSS %f\n", loss);
-
-    // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
-    softmax_crossentropy_backward(&layer2_softmax, label_one_hot);
-
-    printf("BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS: ");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        printf("%f,", layer2_softmax.dinputs[i]);
-    }
-    printf("\n");
-
-    // BACKPROPAGATION LAYER 2
-    layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
-
-    printf("BACKPROPAGATION OF LAYER 2 inputs gradient:");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer2.dinputs[i]);
-    }
-    printf("\n");
-    printf("BACKPROPAGATION OF LAYER 2 weights gradient: \n");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
-        {
-            printf("%f,", layer2.dweights[i][j]);
-        }
-        printf("\n");
-    }
-    printf("BACKPROPAGATION OF LAYER 2 biases gradient:");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        printf("%f,", layer2.dbiases[i]);
-    }
-    printf("\n");
-
-    // BACKPROPAGATION LAYER 1 RELU
-    relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
-
-    printf("LAYER 1 RELU BACKWARD: ");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer1_relu.dinputs[i]);
-    }
-    printf("\n");
-
-    // BACKPROPAGATION LAYER 1
-    layer_backward(&layer1, inputs, layer1_relu.dinputs);
-    
-    printf("BACKPROPAGATION OF LAYER 1 weights gradient: \n");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < INPUT_SIZE; j++)
-        {
-            printf("%f,", layer1.dweights[i][j]);
-        }
-        printf("\n");
-    }
-    printf("BACKPROPAGATION OF LAYER 1 biases gradient:");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer1.dbiases[i]);
-    }
-    printf("\n");
-
-
-    // UPDATE PARAMETERS WITH SGD
-    // Layer 1
-    update_layer_params(&layer1, learning_rate);
-    printf("UPDATED LAYER 1 weights: \n");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < INPUT_SIZE; j++)
-        {
-            printf("%f,", layer1.weights[i][j]);
-        }
-        printf("\n");
-    }
-    printf("UPDATED LAYER 1 biases:");
-    for (int i = 0; i < LAYER1_NB_NEURONS; i++)
-    {
-        printf("%f,", layer1.biases[i]);
-    }
-    printf("\n");
-
-    // Layer 2
-    update_layer_params(&layer2, learning_rate);
-    printf("UPDATED LAYER 2 weights: \n");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        for (int j = 0; j < LAYER1_NB_NEURONS; j++)
-        {
-            printf("%f,", layer2.weights[i][j]);
-        }
-        printf("\n");
-    }
-    printf("UPDATED LAYER 2 biases:");
-    for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    {
-        printf("%f,", layer2.biases[i]);
-    }
-    printf("\n");
+    printf("FINAL LOSS: %f\n", loss);
 
     // FREE VARIABLES
 

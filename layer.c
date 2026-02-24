@@ -4,14 +4,13 @@
 #include "utils.h"
 #include "layer.h"
 
-void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
+void init_layer(int nb_inputs, int nb_neurons, int batch_size, layer_params *layer)
 {
     srand((unsigned int)time(NULL));
 
     layer->nb_inputs = nb_inputs;
     layer->nb_neurons = nb_neurons;
-
-    layer->dinputs = calloc(nb_inputs, sizeof(float));
+    layer->batch_size = batch_size;
 
     layer->biases = calloc(nb_neurons, sizeof(float));
     layer->dbiases = calloc(nb_neurons, sizeof(float));
@@ -31,12 +30,18 @@ void init_layer(int nb_inputs, int nb_neurons, layer_params *layer)
     set_2darray_value(layer->weights, nb_inputs, nb_neurons, weight_values);
     free(weight_values);
 
-    layer->outputs = calloc(nb_neurons, sizeof(float));
+    layer->dinputs = malloc(batch_size * sizeof(float *));
+    layer->outputs = malloc(batch_size * sizeof(float *));
+
+    for (int b = 0; b < batch_size; b++)
+    {
+        layer->outputs[b] = calloc(nb_neurons, sizeof(float));
+        layer->dinputs[b] = calloc(nb_inputs, sizeof(float));
+    }
 }
 
 void destroy_layer(layer_params *layer)
 {
-    free(layer->dinputs);
     free(layer->biases);
     free(layer->dbiases);
     for (int i = 0; i < layer->nb_neurons; i++)
@@ -46,35 +51,71 @@ void destroy_layer(layer_params *layer)
     }
     free(layer->weights);
     free(layer->dweights);
+    for (int i = 0; i < layer->batch_size; i++)
+    {
+        free(layer->dinputs[i]);
+        free(layer->outputs[i]);
+    }
+    free(layer->dinputs);
     free(layer->outputs);
 }
 
-void layer_forward(layer_params *layer, float *inputs)
+void layer_forward(layer_params *layer, float **inputs)
 {
-    for (int i = 0; i < layer->nb_neurons; i++)
+    for (int b = 0; b < layer->batch_size; b++)
     {
-        float neuron_output = 0.0;
-        for (int j = 0; j < layer->nb_inputs; j++)
+        for (int i = 0; i < layer->nb_neurons; i++)
         {
-            neuron_output += inputs[j] * layer->weights[i][j];
+            float neuron_output = 0.0;
+            for (int j = 0; j < layer->nb_inputs; j++)
+            {
+                neuron_output += inputs[b][j] * layer->weights[i][j];
+            }
+            neuron_output += layer->biases[i];
+            layer->outputs[b][i] = neuron_output;
         }
-        neuron_output += layer->biases[i];
-        layer->outputs[i] = neuron_output;
     }
 }
 
-void layer_backward(layer_params *layer, float *layer_inputs, float *dvalues)
+void layer_backward(layer_params *layer, float **layer_inputs, float **dvalues)
 {
-    // gradients on parameters
-    for (int i = 0; i < layer->nb_neurons; i++)
+    // reset dinputs to 0
+    for (int i = 0; i < layer->batch_size; i++)
     {
-        layer->dbiases[i] = dvalues[i]; // this is because there is no batch implemented yet
         for (int j = 0; j < layer->nb_inputs; j++)
         {
-            layer->dweights[i][j] = layer_inputs[j] * dvalues[i];
+            layer->dinputs[i][j] = 0.0;
+        }
+    }
 
-            // gradient on values
-            layer->dinputs[j] += dvalues[i] * layer->weights[i][j];
+    // reset dweights to 0
+    for (int i = 0; i < layer->nb_neurons; i++)
+    {
+        for (int j = 0; j < layer->nb_inputs; j++)
+        {
+            layer->dweights[i][j] = 0.0;
+        }
+    }
+
+    // reset dbiases to 0
+    for (int i = 0; i < layer->nb_neurons; i++)
+    {
+        layer->dbiases[i] = 0.0;
+    }
+
+    for (int b = 0; b < layer->batch_size; b++)
+    {
+        // gradients on parameters
+        for (int i = 0; i < layer->nb_neurons; i++)
+        {
+            layer->dbiases[i] += dvalues[b][i];
+            for (int j = 0; j < layer->nb_inputs; j++)
+            {
+                layer->dweights[i][j] += layer_inputs[b][j] * dvalues[b][i];
+
+                // gradient on values
+                layer->dinputs[b][j] += dvalues[b][i] * layer->weights[i][j];
+            }
         }
     }
 }
@@ -91,70 +132,99 @@ void update_layer_params(layer_params *layer, float learning_rate)
     }
 }
 
-void init_activation(int nb_neurons, activation_params *activation)
+void init_activation(int nb_neurons, int batch_size, activation_params *activation)
 {
     activation->nb_neurons = nb_neurons;
-    activation->dinputs = calloc(nb_neurons, sizeof(float));
-    activation->outputs = calloc(nb_neurons, sizeof(float));
+    activation->batch_size = batch_size;
+
+    activation->dinputs = malloc(batch_size * sizeof(float *));
+    activation->outputs = malloc(batch_size * sizeof(float *));
+    for (int i = 0; i < batch_size; i++)
+    {
+        activation->dinputs[i] = calloc(nb_neurons, sizeof(float));
+        activation->outputs[i] = calloc(nb_neurons, sizeof(float));
+    }
 }
 
 void destroy_activation(activation_params *activation)
 {
+    for (int i = 0; i < activation->batch_size; i++)
+    {
+        free(activation->dinputs[i]);
+        free(activation->outputs[i]);
+    }
     free(activation->dinputs);
     free(activation->outputs);
 }
 
-void relu_forward(activation_params *relu, float *inputs)
+void relu_forward(activation_params *relu, float **inputs)
 {
-    for (int i = 0; i < relu->nb_neurons; i++)
+    for (int b = 0; b < relu->batch_size; b++)
     {
-        relu->outputs[i] = (inputs[i] > 0.0) ? inputs[i] : 0.0;
-    }
-}
-
-void relu_backward(activation_params *relu, float *relu_inputs, float *dvalues)
-{
-    for (int i = 0; i < relu->nb_neurons; i++)
-    {
-        relu->dinputs[i] = (relu_inputs[i] <= 0) ? 0 : dvalues[i];
-    }
-}
-
-void softmax_forward(activation_params *softmax, float *inputs)
-{
-    // get max value
-    float softmax_input_max = 0;
-    for (int i = 0; i < softmax->nb_neurons; i++)
-    {
-        if (inputs[i] > softmax_input_max)
+        for (int i = 0; i < relu->nb_neurons; i++)
         {
-            softmax_input_max = inputs[i];
+            relu->outputs[b][i] = (inputs[b][i] > 0.0) ? inputs[b][i] : 0.0;
         }
     }
-    // get unnormalized probabilities
-    float exp_sum = 0;
-    for (int i = 0; i < softmax->nb_neurons; i++)
+}
+
+void relu_backward(activation_params *relu, float **relu_inputs, float **dvalues)
+{
+    for (int b = 0; b < relu->batch_size; b++)
     {
-        softmax->outputs[i] = exp(inputs[i] - softmax_input_max);
-        exp_sum += softmax->outputs[i];
-    }
-    // normalize the probabilities
-    for (int i = 0; i < softmax->nb_neurons; i++)
-    {
-        softmax->outputs[i] = softmax->outputs[i] / exp_sum;
+        for (int i = 0; i < relu->nb_neurons; i++)
+        {
+            relu->dinputs[b][i] = (relu_inputs[b][i] <= 0) ? 0 : dvalues[b][i];
+        }
     }
 }
 
-void softmax_crossentropy_backward(activation_params *softmax, float *label_one_hot)
+void softmax_forward(activation_params *softmax, float **inputs)
 {
-    for (int i = 0; i < softmax->nb_neurons; i++)
+    for (int b = 0; b < softmax->batch_size; b++)
     {
-        softmax->dinputs[i] = softmax->outputs[i] - label_one_hot[i];
+        // get max value
+        float softmax_input_max = 0;
+        for (int i = 0; i < softmax->nb_neurons; i++)
+        {
+            if (inputs[b][i] > softmax_input_max)
+            {
+                softmax_input_max = inputs[b][i];
+            }
+        }
+        // get unnormalized probabilities
+        float exp_sum = 0;
+        for (int i = 0; i < softmax->nb_neurons; i++)
+        {
+            softmax->outputs[b][i] = exp(inputs[b][i] - softmax_input_max);
+            exp_sum += softmax->outputs[b][i];
+        }
+        // normalize the probabilities
+        for (int i = 0; i < softmax->nb_neurons; i++)
+        {
+            softmax->outputs[b][i] = softmax->outputs[b][i] / exp_sum;
+        }
     }
 }
 
-float calculate_crossentropy_loss(activation_params *softmax, int label_index)
+void softmax_crossentropy_backward(activation_params *softmax, float **label_one_hot)
 {
-    float prediction = (softmax->outputs[label_index] <= 0) ? 0.0000001 : softmax->outputs[label_index];
-    return -log(prediction);
+    for (int b = 0; b < softmax->batch_size; b++)
+    {
+        for (int i = 0; i < softmax->nb_neurons; i++)
+        {
+            softmax->dinputs[b][i] = softmax->outputs[b][i] - label_one_hot[b][i];
+        }
+    }
+}
+
+float calculate_crossentropy_loss(activation_params *softmax, int *label_index)
+{
+    float sum_loss = 0;
+    for (int i = 0; i < softmax->batch_size; i++)
+    {
+        float o = softmax->outputs[i][label_index[i]];
+        sum_loss += -log(clip_value(o, 1e-7, 1 - 1e-7));
+    }
+    return sum_loss / softmax->batch_size;
 }

@@ -12,7 +12,8 @@ void set_2darray_value(float **array2d, int nb_col, int nb_row, float *values)
     }
 }
 
-float get_random_float(float min, float max){
+float get_random_float(float min, float max)
+{
     return min + (float)((double)rand() / (double)RAND_MAX) * (max - min);
 }
 
@@ -24,4 +25,11 @@ float *get_random_array(int size, float min_value, float max_value)
         array[i] = get_random_float(min_value, max_value);
     }
     return array;
+}
+
+float clip_value(float value, float min, float max)
+{
+    if (value < min) value = min;
+    if (value > max) value = max;
+    return value;
 }

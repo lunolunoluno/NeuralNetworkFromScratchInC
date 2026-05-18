@@ -33,7 +33,7 @@ void destroy_activation(activation_params *activation);
 void relu_forward(activation_params *relu, float **inputs);
 void relu_backward(activation_params *relu, float **relu_inputs, float **dvalues);
 void softmax_forward(activation_params *softmax, float **inputs);
-void softmax_crossentropy_backward(activation_params *softmax, float **label_one_hot);
+void softmax_crossentropy_backward(activation_params *softmax, int **label_one_hot);
 
 float calculate_crossentropy_loss(activation_params *softmax, int *label_index);
 

@@ -7,6 +7,7 @@ typedef struct dataset_batch
     int batch_size;
     float **data;
     int *labels;
+    int **labels_one_hot;
 } dataset_batch;
 
 typedef struct dataset
@@ -15,7 +16,7 @@ typedef struct dataset
     dataset_batch *batches;
 } dataset;
 
-void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, char csv_separator);
+void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, int nb_outputs, char csv_separator);
 void destroy_dataset(dataset *ds);
 
 #endif

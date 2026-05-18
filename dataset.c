@@ -24,7 +24,7 @@ int count_lines_in_file(char *filename)
 }
 
 // this code will assume that the last column of the csv is the label and the the label is an integer
-void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, char csv_separator)
+void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, int nb_outputs, char csv_separator)
 {
     int nb_lines = count_lines_in_file(csv_path);
     int nb_batches = (nb_lines + batch_size - 1) / batch_size;
@@ -46,9 +46,11 @@ void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, 
                 ds->batches[i].labels[j] = -1; 
             }
         }
+        ds->batches[i].labels_one_hot = malloc(batch_size * sizeof(int *));
         ds->batches[i].data = malloc(batch_size * sizeof(float *));
         for (int j = 0; j < batch_size; j++)
         {
+            ds->batches[i].labels_one_hot[j] = calloc(nb_outputs, sizeof(int));
             ds->batches[i].data[j] = calloc(nb_inputs, sizeof(float));
         }
     }
@@ -86,7 +88,9 @@ void create_dataset(dataset *ds, char *csv_path, int nb_inputs, int batch_size, 
 
         // Extract the integer label
         if (token != NULL) {
-            ds->batches[batch_index].labels[sample_index] = atoi(token);
+            int label = atoi(token);
+            ds->batches[batch_index].labels[sample_index] = label;
+            ds->batches[batch_index].labels_one_hot[sample_index][label] = 1;
         } else {
             fprintf(stderr, "Warning: Row %d is missing the label column.\n", (batch_index * batch_size) + sample_index + 1);
             ds->batches[batch_index].labels[sample_index] = -1; // Default fallback
@@ -107,8 +111,10 @@ void destroy_dataset(dataset *ds)
         for (int j = 0; j < ds->batches[i].batch_size; j++)
         {
             free(ds->batches[i].data[j]);
+            free(ds->batches[i].labels_one_hot[j]);
         }
         free(ds->batches[i].data);
+        free(ds->batches[i].labels_one_hot);
         free(ds->batches[i].labels); 
     }
     free(ds->batches);

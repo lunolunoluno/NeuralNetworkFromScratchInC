@@ -207,7 +207,7 @@ void softmax_forward(activation_params *softmax, float **inputs)
     }
 }
 
-void softmax_crossentropy_backward(activation_params *softmax, float **label_one_hot)
+void softmax_crossentropy_backward(activation_params *softmax, int **label_one_hot)
 {
     for (int b = 0; b < softmax->batch_size; b++)
     {

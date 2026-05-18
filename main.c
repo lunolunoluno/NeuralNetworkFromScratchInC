@@ -5,15 +5,29 @@
 #include "layer.h"
 #include "utils.h"
 
-#define BATCH_SIZE 7
+#define BATCH_SIZE 3
 #define INPUT_SIZE 2
 #define LAYER1_NB_NEURONS 3
 #define LAYER2_NB_NEURONS 3 // this is also the output
 
 int main()
 {
+    // INIT VARIABLES
+
     dataset train_dataset;
-    create_dataset(&train_dataset, "./100_samples_3_cat.csv", INPUT_SIZE, BATCH_SIZE, ',');
+    
+    layer_params layer1;
+    activation_params layer1_relu;
+
+    layer_params layer2;
+    activation_params layer2_softmax;
+
+    // GIVE VARIABLES INITIAL VALUES
+    int nb_epochs = 1;
+    float learning_rate = 1.0;
+    float epsilon = 1e-7;
+
+    create_dataset(&train_dataset, "./100_samples_3_cat.csv", INPUT_SIZE, BATCH_SIZE, LAYER2_NB_NEURONS, ',');
 
     for (int i = 0; i < train_dataset.nb_batches; i++)
     {
@@ -29,152 +43,69 @@ int main()
         }
     }
 
-    // INIT VARIABLES
+    init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, BATCH_SIZE, &layer1);
+    init_activation(LAYER1_NB_NEURONS, BATCH_SIZE, &layer1_relu);
 
-    // float **batch = malloc(BATCH_SIZE * sizeof(float *));
-    // float **label_one_hot = malloc(BATCH_SIZE * sizeof(float *));
-    // for (int i = 0; i < BATCH_SIZE; i++)
-    // {
-    //     batch[i] = calloc(INPUT_SIZE, sizeof(float));
-    //     label_one_hot[i] = calloc(LAYER2_NB_NEURONS, sizeof(float));
-    // }
-    // int *labels = calloc(BATCH_SIZE, sizeof(int));
+    init_layer(LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, BATCH_SIZE, &layer2);
+    init_activation(LAYER2_NB_NEURONS, BATCH_SIZE, &layer2_softmax);
 
-    // layer_params layer1;
-    // activation_params layer1_relu;
+    for (int epoch = 0; epoch < nb_epochs; epoch++)
+    {
+        for (int batch_index = 0; batch_index < train_dataset.nb_batches; batch_index++)
+        {
+            // FEED FORWARD LAYER 1
+            layer_forward(&layer1, train_dataset.batches[batch_index].data);
 
-    // layer_params layer2;
-    // activation_params layer2_softmax;
+            // LAYER 1 ReLU
+            relu_forward(&layer1_relu, layer1.outputs);
 
-    // // GIVE VARIABLES INITIAL VALUES
+            // FEED FORWARD LAYER 2
+            layer_forward(&layer2, layer1_relu.outputs);
 
-    // int nb_epochs = 100000;
-    // float learning_rate = 1.0;
-    // float epsilon = 1e-7;
-    // batch[0][0] = -0.8326189893369458;
-    // batch[0][1] = -0.5538462048218106;
-    // batch[1][0] = 0.9989373586840176;
-    // batch[1][1] = 0.046088538980948564;
-    // batch[2][0] = -0.6360447021800988;
-    // batch[2][1] = 0.7716522123525789;
+            // LAYER 2 SOFTMAX
+            softmax_forward(&layer2_softmax, layer2.outputs);
 
-    // labels[0] = 0;
-    // labels[1] = 1;
-    // labels[2] = 2;
+            // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
+            float loss = calculate_crossentropy_loss(&layer2_softmax, train_dataset.batches[batch_index].labels);
+            if (epoch % 100 == 0)
+            {
+                printf("epoch: %d, batch %d, loss: %f\n", epoch, batch_index, loss);
+            }
 
-    // for (int i = 0; i < BATCH_SIZE; i++)
-    // {
-    //     label_one_hot[i][labels[i]] = 1.0;
-    // }
+            if (loss <= epsilon)
+            {
+                printf("LOSS <= %f at epoch %d, batch %d!\n", epsilon, epoch, batch_index);
+                break;
+            }
 
-    // init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, BATCH_SIZE, &layer1);
-    // init_activation(LAYER1_NB_NEURONS, BATCH_SIZE, &layer1_relu);
+            // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
+            softmax_crossentropy_backward(&layer2_softmax, train_dataset.batches[batch_index].labels_one_hot);
 
-    // init_layer(LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, BATCH_SIZE, &layer2);
-    // init_activation(LAYER2_NB_NEURONS, BATCH_SIZE, &layer2_softmax);
+            // BACKPROPAGATION LAYER 2
+            layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
 
-    // printf("BATCH:\n");
-    // for (int b = 0; b < BATCH_SIZE; b++)
-    // {
-    //     for (int i = 0; i < INPUT_SIZE; i++)
-    //     {
-    //         printf("%f, ", batch[b][i]);
-    //     }
-    //     printf("\n");
-    // }
+            // BACKPROPAGATION LAYER 1 RELU
+            relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
 
-    // printf("ONE-HOT LABEL:\n");
-    // for (int b = 0; b < BATCH_SIZE; b++)
-    // {
-    //     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    //     {
-    //         printf("%f, ", label_one_hot[b][i]);
-    //     }
-    //     printf("\n");
-    // }
+            // BACKPROPAGATION LAYER 1
+            layer_backward(&layer1, train_dataset.batches[batch_index].data, layer1_relu.dinputs);
 
-    // for (int epoch = 0; epoch < nb_epochs; epoch++)
-    // {
-    //     // FEED FORWARD LAYER 1
-    //     layer_forward(&layer1, batch);
+            // UPDATE PARAMETERS
+            // Layer 1
+            update_layer_params(&layer1, learning_rate);
+            // Layer 2
+            update_layer_params(&layer2, learning_rate);
+        }
+    }
 
-    //     // LAYER 1 ReLU
-    //     relu_forward(&layer1_relu, layer1.outputs);
+    // FREE VARIABLES
 
-    //     // FEED FORWARD LAYER 2
-    //     layer_forward(&layer2, layer1_relu.outputs);
+    destroy_activation(&layer2_softmax);
+    destroy_layer(&layer2);
 
-    //     // LAYER 2 SOFTMAX
-    //     softmax_forward(&layer2_softmax, layer2.outputs);
+    destroy_activation(&layer1_relu);
+    destroy_layer(&layer1);
 
-    //     // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
-    //     float loss = calculate_crossentropy_loss(&layer2_softmax, labels);
-    //     if (epoch % 100 == 0)
-    //     {
-    //         printf("epoch: %d, loss: %f\n", epoch, loss);
-    //     }
-
-    //     if (loss <= epsilon)
-    //     {
-    //         printf("LOSS <= %f at epoch %d!\n", epsilon, epoch);
-    //         break;
-    //     }
-
-    //     // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
-    //     softmax_crossentropy_backward(&layer2_softmax, label_one_hot);
-
-    //     // BACKPROPAGATION LAYER 2
-    //     layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
-
-    //     // BACKPROPAGATION LAYER 1 RELU
-    //     relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
-
-    //     // BACKPROPAGATION LAYER 1
-    //     layer_backward(&layer1, batch, layer1_relu.dinputs);
-
-    //     // UPDATE PARAMETERS
-    //     // Layer 1
-    //     update_layer_params(&layer1, learning_rate);
-    //     // Layer 2
-    //     update_layer_params(&layer2, learning_rate);
-    // }
-
-    // layer_forward(&layer1, batch);
-
-    // relu_forward(&layer1_relu, layer1.outputs);
-
-    // layer_forward(&layer2, layer1_relu.outputs);
-
-    // softmax_forward(&layer2_softmax, layer2.outputs);
-    // printf("NETWORK PREDICTION:\n");
-    // for (int b = 0; b < BATCH_SIZE; b++)
-    // {
-    //     for (int i = 0; i < LAYER2_NB_NEURONS; i++)
-    //     {
-    //         printf("%f,", layer2_softmax.outputs[b][i]);
-    //     }
-    //     printf("\n");
-    // }
-
-    // float loss = calculate_crossentropy_loss(&layer2_softmax, labels);
-    // printf("FINAL LOSS: %f\n", loss);
-
-    // // FREE VARIABLES
-
-    // destroy_activation(&layer2_softmax);
-    // destroy_layer(&layer2);
-
-    // destroy_activation(&layer1_relu);
-    // destroy_layer(&layer1);
-
-    // free(labels);
-    // for (int i = 0; i < BATCH_SIZE; i++)
-    // {
-    //     free(batch[i]);
-    //     free(label_one_hot[i]);
-    // }
-    // free(label_one_hot);
-    // free(batch);
     destroy_dataset(&train_dataset);
     return 0;
 }

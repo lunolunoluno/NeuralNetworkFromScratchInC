@@ -223,8 +223,11 @@ float calculate_crossentropy_loss(activation_params *softmax, int *label_index)
     float sum_loss = 0;
     for (int i = 0; i < softmax->batch_size; i++)
     {
-        float o = softmax->outputs[i][label_index[i]];
-        sum_loss += -log(clip_value(o, 1e-7, 1 - 1e-7));
+        if (label_index[i] >= 0) // if label_index == -1, then ignore
+        {
+            float o = softmax->outputs[i][label_index[i]];
+            sum_loss += -log(clip_value(o, 1e-7, 1 - 1e-7));
+        }
     }
     return sum_loss / softmax->batch_size;
 }

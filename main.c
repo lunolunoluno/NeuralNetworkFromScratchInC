@@ -5,7 +5,7 @@
 #include "layer.h"
 #include "utils.h"
 
-#define BATCH_SIZE 3
+#define BATCH_SIZE 7
 #define INPUT_SIZE 2
 #define LAYER1_NB_NEURONS 3
 #define LAYER2_NB_NEURONS 3 // this is also the output

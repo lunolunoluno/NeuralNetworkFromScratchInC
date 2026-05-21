@@ -184,7 +184,7 @@ void softmax_forward(activation_params *softmax, float **inputs)
     for (int b = 0; b < softmax->batch_size; b++)
     {
         // get max value
-        float softmax_input_max = 0;
+        float softmax_input_max = inputs[b][0];
         for (int i = 0; i < softmax->nb_neurons; i++)
         {
             if (inputs[b][i] > softmax_input_max)
@@ -220,6 +220,7 @@ void softmax_crossentropy_backward(activation_params *softmax, int **label_one_h
 
 float calculate_crossentropy_loss(activation_params *softmax, int *label_index)
 {
+    if (softmax->batch_size == 0) return 0.0f;
     float sum_loss = 0;
     for (int i = 0; i < softmax->batch_size; i++)
     {

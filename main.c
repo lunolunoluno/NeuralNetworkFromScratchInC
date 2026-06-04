@@ -6,120 +6,65 @@
 #include "layer.h"
 #include "utils.h"
 
-#define BATCH_SIZE 7
+#define BATCH_SIZE 64
 #define INPUT_SIZE 2
-#define LAYER1_NB_NEURONS 3
-#define LAYER2_NB_NEURONS 3 // this is also the output
+#define NB_OUTPUT 3
 
 int main()
 {
     srand((unsigned int)time(NULL));
-    // INIT VARIABLES
+    int nb_layers = 4;
+    int layers_shape[] = {64, 64, 64, NB_OUTPUT};
 
+    // INIT VARIABLES
     dataset train_dataset;
 
-    layer_params layer1;
-    activation_params layer1_relu;
-
-    layer_params layer2;
-    activation_params layer2_softmax;
+    layer_params *layers = malloc(nb_layers * sizeof(layer_params));
+    activation_params *activations = malloc(nb_layers * sizeof(activation_params));
 
     // GIVE VARIABLES INITIAL VALUES
-    int nb_epochs = 100;
+    int nb_epochs = 1000;
     float learning_rate = 0.01;
     float epsilon = 1e-7;
 
-    create_dataset(&train_dataset, "./100_samples_3_cat_shuffled.csv", INPUT_SIZE, BATCH_SIZE, LAYER2_NB_NEURONS, ',');
+    create_dataset(&train_dataset, "./100000_samples_3_cat_shuffled.csv", INPUT_SIZE, BATCH_SIZE, NB_OUTPUT, ',');
 
-    // for (int i = 0; i < train_dataset.nb_batches; i++)
-    // {
-    //     printf("BATCH %d\n", i);
-    //     for (int j = 0; j < train_dataset.batches[i].batch_size; j++)
-    //     {
-    //         printf("sample %d: [", j);
-    //         for (int k = 0; k < train_dataset.batches[i].nb_inputs; k++)
-    //         {
-    //             printf("%f, ", train_dataset.batches[i].data[j][k]);
-    //         }
-    //         printf("] => %d\n", train_dataset.batches[i].labels[j]);
-    //     }
-    // }
-
-    init_layer(INPUT_SIZE, LAYER1_NB_NEURONS, BATCH_SIZE, &layer1);
-    init_activation(LAYER1_NB_NEURONS, BATCH_SIZE, &layer1_relu);
-
-    // printf("LAYER 1:\nWeights:\n");
-    // for (int i = 0; i < layer1.nb_neurons; i++)
-    // {
-    //     for (int j = 0; j < layer1.nb_inputs; j++)
-    //     {
-    //         printf("%f,", layer1.weights[i][j]);
-    //     }
-    //     printf("\n");
-    // }
-    // printf("Biases:\n");
-    // for (int i = 0; i < layer1.nb_neurons; i++)
-    // {
-    //     printf("%f,", layer1.biases[i]);
-    // }
-    // printf("\n");    
-
-    init_layer(LAYER1_NB_NEURONS, LAYER2_NB_NEURONS, BATCH_SIZE, &layer2);
-    init_activation(LAYER2_NB_NEURONS, BATCH_SIZE, &layer2_softmax);
-
-    // printf("LAYER 2:\nWeights:\n");
-    // for (int i = 0; i < layer2.nb_neurons; i++)
-    // {
-    //     for (int j = 0; j < layer2.nb_inputs; j++)
-    //     {
-    //         printf("%f,", layer2.weights[i][j]);
-    //     }
-    //     printf("\n");
-    // }
-    // printf("Biases:\n");
-    // for (int i = 0; i < layer2.nb_neurons; i++)
-    // {
-    //     printf("%f,", layer2.biases[i]);
-    // }
-    // printf("\n");    
-
+    init_layer(INPUT_SIZE, layers_shape[0], BATCH_SIZE, &layers[0]);
+    init_activation(layers_shape[0], BATCH_SIZE, &activations[0]);
+    for (int i = 1; i < nb_layers; i++)
+    {
+        init_layer(layers_shape[i - 1], layers_shape[i], BATCH_SIZE, &layers[i]);
+        init_activation(layers_shape[i], BATCH_SIZE, &activations[i]);
+    }
 
     // TRAIN NETWORK
     for (int epoch = 0; epoch < nb_epochs; epoch++)
     {
         for (int batch_index = 0; batch_index < train_dataset.nb_batches; batch_index++)
         {
-            // printf("BATCH %d\n", batch_index);
-            // for (int j = 0; j < train_dataset.batches[batch_index].batch_size; j++)
-            // {
-            //     printf("sample %d: inputs [", j);
-            //     for (int k = 0; k < train_dataset.batches[batch_index].nb_inputs; k++)
-            //     {
-            //         printf("%f, ", train_dataset.batches[batch_index].data[j][k]);
-            //     }
-            //     printf("], label: %d\n", train_dataset.batches[batch_index].labels[j]);
-            // }
+            for (int layer_idx = 0; layer_idx < nb_layers; layer_idx++)
+            {
+                // FEED FORWARD
+                if (layer_idx == 0)
+                {
+                    layer_forward(&layers[layer_idx], train_dataset.batches[batch_index].data);
+                } else {
+                    layer_forward(&layers[layer_idx], activations[layer_idx - 1].outputs);
+                }
 
-            // FEED FORWARD LAYER 1
-            layer_forward(&layer1, train_dataset.batches[batch_index].data);
-
-            // LAYER 1 ReLU
-            relu_forward(&layer1_relu, layer1.outputs);
-
-            // FEED FORWARD LAYER 2
-            layer_forward(&layer2, layer1_relu.outputs);
-
-            // LAYER 2 SOFTMAX
-            softmax_forward(&layer2_softmax, layer2.outputs);
-
-            // printf("OUTPUT:\n"); 
-            // for (int i = 0; i < train_dataset.batches[batch_index].batch_size; i++)
-            // {
-            //     printf("sample %d, softmax output: [%f, %f, %f]\n", i, layer2_softmax.outputs[i][0], layer2_softmax.outputs[i][1], layer2_softmax.outputs[i][2]);
-            // }
+                // ACTIVATION FUNCTION
+                if (layer_idx == nb_layers - 1)
+                {
+                    softmax_forward(&activations[layer_idx], layers[layer_idx].outputs);
+                }
+                else
+                {
+                    relu_forward(&activations[layer_idx], layers[layer_idx].outputs);
+                }
+            }
 
             // CALCULATE CATEGORICAL CROSS-ENTROPY LOSS
-            float loss = calculate_crossentropy_loss(&layer2_softmax, train_dataset.batches[batch_index].labels);
+            float loss = calculate_crossentropy_loss(&activations[nb_layers - 1], train_dataset.batches[batch_index].labels);
             if (epoch % 1 == 0)
             {
                 printf("epoch: %d, batch %d, loss: %f\n", epoch, batch_index, loss);
@@ -131,65 +76,41 @@ int main()
                 break;
             }
 
-            // BACKPROPAGATION OF SOFTMAX + CROSS-ENTROPY LOSS (easier to implement)
-            softmax_crossentropy_backward(&layer2_softmax, train_dataset.batches[batch_index].labels_one_hot);
+            for (int layer_idx = nb_layers - 1; layer_idx >= 0; layer_idx--)
+            {
+                // BACKPROPAGATION OF ACTIVATION
+                if (layer_idx == nb_layers - 1)
+                {
+                    softmax_crossentropy_backward(&activations[layer_idx], train_dataset.batches[batch_index].labels_one_hot);
+                }
+                else
+                {
+                    relu_backward(&activations[layer_idx], layers[layer_idx].outputs, layers[layer_idx + 1].dinputs);
+                }
+                // BACKPROPAGATION LAYER
+                if (layer_idx > 0)
+                {
+                    layer_backward(&layers[layer_idx], activations[layer_idx - 1].outputs, activations[layer_idx].dinputs);
+                }
+                else
+                {
+                    layer_backward(&layers[layer_idx], train_dataset.batches[batch_index].data, activations[layer_idx].dinputs);
+                }
 
-            // BACKPROPAGATION LAYER 2
-            layer_backward(&layer2, layer1_relu.outputs, layer2_softmax.dinputs);
-
-            // BACKPROPAGATION LAYER 1 RELU
-            relu_backward(&layer1_relu, layer1.outputs, layer2.dinputs);
-
-            // BACKPROPAGATION LAYER 1
-            layer_backward(&layer1, train_dataset.batches[batch_index].data, layer1_relu.dinputs);
-
-            // UPDATE PARAMETERS
-            // Layer 1
-            update_layer_params(&layer1, learning_rate);
-            // Layer 2
-            update_layer_params(&layer2, learning_rate);
-            
-            // printf("UPDATED LAYER 1:\nWeights:\n");
-            // for (int i = 0; i < layer1.nb_neurons; i++)
-            // {
-            //     for (int j = 0; j < layer1.nb_inputs; j++)
-            //     {
-            //         printf("%f,", layer1.weights[i][j]);
-            //     }
-            //     printf("\n");
-            // }
-            // printf("Biases:\n");
-            // for (int i = 0; i < layer1.nb_neurons; i++)
-            // {
-            //     printf("%f,", layer1.biases[i]);
-            // }
-            // printf("\n");   
-            // printf("UPDATED LAYER 2:\nWeights:\n");
-            // for (int i = 0; i < layer2.nb_neurons; i++)
-            // {
-            //     for (int j = 0; j < layer2.nb_inputs; j++)
-            //     {
-            //         printf("%f,", layer2.weights[i][j]);
-            //     }
-            //     printf("\n");
-            // }
-            // printf("Biases:\n");
-            // for (int i = 0; i < layer2.nb_neurons; i++)
-            // {
-            //     printf("%f,", layer2.biases[i]);
-            // }
-            // printf("\n");   
-            // break;
+                // UPDATE PARAMETERS
+                update_layer_params(&layers[layer_idx], learning_rate);
+            }
         }
     }
 
     // FREE VARIABLES
-
-    destroy_activation(&layer2_softmax);
-    destroy_layer(&layer2);
-
-    destroy_activation(&layer1_relu);
-    destroy_layer(&layer1);
+    for (int layer_idx = 0; layer_idx < nb_layers; layer_idx++)
+    {
+        destroy_activation(&activations[layer_idx]);
+        destroy_layer(&layers[layer_idx]);
+    }
+    free(layers);
+    free(activations);
 
     destroy_dataset(&train_dataset);
     return 0;

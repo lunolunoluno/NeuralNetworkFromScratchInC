@@ -176,6 +176,28 @@ void relu_backward(activation_params *relu, float **relu_inputs, float **dvalues
     }
 }
 
+void leaky_relu_forward(activation_params *relu, float **inputs)
+{
+    for (int b = 0; b < relu->batch_size; b++)
+    {
+        for (int i = 0; i < relu->nb_neurons; i++)
+        {
+            relu->outputs[b][i] = (inputs[b][i] > 0.0) ? inputs[b][i] : 0.01f * inputs[b][i];
+        }
+    }
+}
+
+void leaky_relu_backward(activation_params *relu, float **relu_inputs, float **dvalues)
+{
+    for (int b = 0; b < relu->batch_size; b++)
+    {
+        for (int i = 0; i < relu->nb_neurons; i++)
+        {
+            relu->dinputs[b][i] = (relu_inputs[b][i] <= 0) ? 0.01f * dvalues[b][i] : dvalues[b][i];
+        }
+    }
+}
+
 void softmax_forward(activation_params *softmax, float **inputs)
 {
     for (int b = 0; b < softmax->batch_size; b++)

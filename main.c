@@ -59,7 +59,7 @@ int main()
                 }
                 else
                 {
-                    relu_forward(&activations[layer_idx], layers[layer_idx].outputs);
+                    leaky_relu_forward(&activations[layer_idx], layers[layer_idx].outputs);
                 }
             }
 
@@ -85,7 +85,7 @@ int main()
                 }
                 else
                 {
-                    relu_backward(&activations[layer_idx], layers[layer_idx].outputs, layers[layer_idx + 1].dinputs);
+                    leaky_relu_backward(&activations[layer_idx], layers[layer_idx].outputs, layers[layer_idx + 1].dinputs);
                 }
                 // BACKPROPAGATION LAYER
                 if (layer_idx > 0)
